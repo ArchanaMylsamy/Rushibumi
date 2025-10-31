@@ -39,6 +39,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::middleware(['web','maintenance'])->prefix('user')->group(base_path('routes/user.php'));
                 Route::middleware(['web','maintenance'])->group(base_path('routes/web.php'));
 
+                // API Routes for Flutter (separate from web routes)
+                Route::middleware(['api'])->group(base_path('routes/api.php'));
+
             });
         }
     )

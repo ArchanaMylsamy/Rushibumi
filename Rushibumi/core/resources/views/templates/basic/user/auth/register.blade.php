@@ -387,7 +387,64 @@
             /* background-color: #440ef4; */
             color: #fff;
         }
+        .select2-dropdown {
+            background-color: hsl(var(--bg-color)) !important;
+            border: 1px solid hsl(var(--white) / 0.1) !important;
+        }
+
+        .select2-container--default .select2-results__option {
+            background-color: hsl(var(--bg-color)) !important;
+            color: hsl(var(--text-color)) !important;
+        }
+
+        /* Regular select dropdown styling for Government ID Type */
+        select.form-control.form--control {
+            background-color: hsl(var(--bg-color)) !important;
+            color: hsl(var(--text-color)) !important;
+            border: 1px solid hsl(var(--white) / 0.1) !important;
+        }
+
+        select.form-control.form--control option {
+            background-color: hsl(var(--bg-color)) !important;
+            color: hsl(var(--text-color)) !important;
+        }
+
+        /* For browsers that support styling option elements */
+        select.form-control.form--control:focus {
+            background-color: hsl(var(--bg-color)) !important;
+            color: hsl(var(--text-color)) !important;
+        }
+
+        /* Additional styling for better cross-browser support */
+        select.form-control.form--control::-ms-expand {
+            display: none;
+        }
+
+        /* Custom dropdown arrow */
+        select.form-control.form--control {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 35px;
+        }
     </style>
+@endpush
+
+@push('script')
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for Government ID Type dropdown
+    $('select[name="government_id_type"]').select2({
+        theme: 'default',
+        width: '100%',
+        placeholder: 'Select ID Type'
+    });
+});
+</script>
 @endpush
 
 
