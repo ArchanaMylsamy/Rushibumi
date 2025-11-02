@@ -108,5 +108,72 @@ class VideoController extends Controller
             'video_file_url' => $video->videoFiles->first() ? route('video.path', encrypt($video->videoFiles->first()->id)) : null,
         ];
     }
+
+    /**
+     * Get videos by category slug or ID (for Flutter sidebar click)
+     * Accepts both slug (string) and ID (numeric)
+     */
+    public function byCategorySlug(Request $request, $identifier)
+    {
+        $perPage = $request->get('per_page', 20);
+        $trending = $request->get('trending', false);
+        $page = $request->get('page', 1);
+
+        // Try to find by ID first (if numeric), then by slug
+        if (is_numeric($identifier)) {
+            $category = \App\Models\Category::active()->find($identifier);
+        } else {
+            $category = \App\Models\Category::active()->where('slug', $identifier)->first();
+        }
+        
+        if (!$category) {
+            return responseError('category_not_found', ['Category not found or inactive']);
+        }
+
+        $query = Video::published()
+            ->public()
+            ->withoutOnlyPlaylist()
+            ->where('is_shorts_video', Status::NO)
+            ->where('category_id', $category->id)
+            ->with(['user:id,username,firstname,lastname,display_name,image', 'videoFiles', 'category:id,name,slug'])
+            ->whereHas('user', function ($q) {
+                $q->active();
+            });
+
+        // Filter trending
+        if ($trending) {
+            $query->where(function ($q) {
+                $q->whereDate('created_at', '>=', now()->subDays(7))
+                  ->orWhere('is_trending', Status::YES);
+            })->orderByDesc('views');
+        } else {
+            $query->latest();
+        }
+
+        $videos = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Transform videos for API
+        $videos->getCollection()->transform(function ($video) {
+            return $this->transformVideo($video);
+        });
+
+        return responseSuccess('videos_fetched', 'Videos fetched successfully', [
+            'category' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'icon' => $category->icon,
+            ],
+            'videos' => $videos->items(),
+            'pagination' => [
+                'current_page' => $videos->currentPage(),
+                'last_page' => $videos->lastPage(),
+                'per_page' => $videos->perPage(),
+                'total' => $videos->total(),
+                'from' => $videos->firstItem(),
+                'to' => $videos->lastItem(),
+            ]
+        ]);
+    }
 }
 

@@ -6,9 +6,9 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\GatewayCurrency;
 use App\Models\Playlist;
+use App\Rules\FileTypeValidate;
 use App\Traits\ChannelManager;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ChannelController extends Controller {
     use ChannelManager;
@@ -21,10 +21,7 @@ class ChannelController extends Controller {
             return to_route('user.home');
         }
         $pageTitle  = "Create Channel";
-        $info       = json_decode(json_encode(getIpInfo()), true);
-        $mobileCode = @implode(',', $info['code']);
-        $countries  = json_decode(file_get_contents(resource_path('views/partials/country.json')));
-        return view('Template::user.channel.form', compact('pageTitle', 'info', 'mobileCode', 'countries'));
+        return view('Template::user.channel.form', compact('pageTitle'));
     }
 
     public function channelDataSubmit(Request $request) {
@@ -35,19 +32,10 @@ class ChannelController extends Controller {
             return to_route('user.home');
         }
 
-        $countryData  = (array) json_decode(file_get_contents(resource_path('views/partials/country.json')));
-        $countryCodes = implode(',', array_keys($countryData));
-        $mobileCodes  = implode(',', array_column($countryData, 'dial_code'));
-        $countries    = implode(',', array_column($countryData, 'country'));
-
         $request->validate([
-            'country_code' => 'required|in:' . $countryCodes,
-            'country'      => 'required|in:' . $countries,
-            'mobile_code'  => 'required|in:' . $mobileCodes,
             'username'     => 'required|unique:users|min:6',
-            'mobile'       => ['required', 'regex:/^([0-9]*)$/', Rule::unique('users')->where('dial_code', $request->mobile_code)],
             'channel_name' => 'required|string|max:255',
-
+            'image'        => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
         ]);
 
         if (preg_match("/[^a-z0-9_]/", trim($request->username))) {
@@ -56,23 +44,28 @@ class ChannelController extends Controller {
             return back()->withNotify($notify)->withInput($request->all());
         }
 
-        $user->country_code = $request->country_code;
+        // Only update channel-specific fields
+        // Phone, name, and other personal info are already collected during registration
         $user->channel_name = $request->channel_name;
         $user->slug         = slug($request->channel_name) . "-" . $user->id;
-        $user->mobile       = $request->mobile;
         $user->username     = $request->username;
 
-        $user->address      = $request->address;
-        $user->city         = $request->city;
-        $user->state        = $request->state;
-        $user->zip          = $request->zip;
-        $user->country_name = @$request->country;
-        $user->dial_code    = $request->mobile_code;
+        // Handle profile picture upload
+        if ($request->hasFile('image')) {
+            $old = $user->image;
+            try {
+                $user->image = fileUploader($request->image, getFilePath('userProfile'), getFileSize('userProfile'), $old);
+            } catch (\Exception $exp) {
+                $notify[] = ['error', 'Couldn\'t upload the profile picture'];
+                return back()->withNotify($notify);
+            }
+        }
 
         $user->profile_complete = Status::YES;
         $user->save();
 
-        return to_route('user.home');
+        $notify[] = ['success', 'Channel created successfully.'];
+        return to_route('user.home')->withNotify($notify);
     }
 
     public function playlistFetch($id) {

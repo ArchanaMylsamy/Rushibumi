@@ -15,80 +15,49 @@
                         <h3 class="account-form__title">{{ __($pageTitle) }}</h3>
                     </div>
                     <div class="account-form__body">
-                        <form method="POST" action="{{ route('user.channel.data.submit') }}">
+                        <form method="POST" action="{{ route('user.channel.data.submit') }}" enctype="multipart/form-data">
                             @csrf
-                            <div class="row">
+                            
+                            <!-- Profile Picture Upload -->
+                            <div class="profile-upload-wrapper">
+                                <div class="profile-picture-upload">
+                                    <div class="profile-picture-preview">
+                                        <img id="profilePreview" src="{{ getImage(getFilePath('userProfile') . '/' . (auth()->user()->image ?? 'default.png'), null, true) }}" alt="Profile Picture">
+                                    </div>
+                                    <label for="profile_image" class="btn-select-picture">
+                                        @lang('Select picture')
+                                        <input type="file" id="profile_image" name="image" accept=".png, .jpg, .jpeg" hidden>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Name and Handle Fields -->
+                            <div class="channel-form-fields">
+                                <div class="form-group">
+                                    <label class="form-label">@lang('Name')</label>
+                                    <input type="text" class="form-control form--control" required name="channel_name"
+                                        value="{{ old('channel_name', auth()->user()->display_name ?? auth()->user()->firstname ?? '') }}" 
+                                        placeholder="@lang('Enter channel name')">
+                                </div>
                                 
-                            <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Channel Name')</label>
-                                        <input type="text" class="form-control form--control" required name="channel_name"
-                                            value="{{ old('channel_name') }}">
-                                      
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Username')</label>
+                                <div class="form-group">
+                                    <label class="form-label">@lang('Handle')</label>
+                                    <div class="handle-input-wrapper">
+                                        <span class="handle-prefix">@</span>
                                         <input type="text" class="form-control form--control checkUser" required name="username"
-                                            value="{{ old('username') }}">
-                                        <small class="text--danger usernameExist"></small>
+                                            value="{{ old('username') }}" 
+                                            placeholder="@lang('username')" 
+                                            id="handleInput">
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Country')</label>
-                                        <select name="country" class="form-control form--control select2" required>
-                                            @foreach ($countries as $key => $country)
-                                                <option data-mobile_code="{{ $country->dial_code }}"
-                                                    value="{{ $country->country }}" data-code="{{ $key }}">
-                                                    {{ __($country->country) }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label">@lang('Mobile')</label>
-                                        <div class="input-group ">
-                                            <span class="input-group-text mobile-code">
-
-                                            </span>
-                                            <input type="hidden" name="mobile_code">
-                                            <input type="hidden" name="country_code">
-                                            <input type="number" name="mobile" value="{{ old('mobile') }}"
-                                                class="form-control form--control checkUser" required>
-                                        </div>
-                                        <small class="text--danger mobileExist"></small>
-                                    </div>
-                                </div>
-                                <div class="form-group col-sm-6">
-                                    <label class="form-label">@lang('Address')</label>
-                                    <input type="text" class="form-control form--control" name="address"
-                                        value="{{ old('address') }}">
-                                </div>
-                                <div class="form-group col-sm-6">
-                                    <label class="form-label">@lang('State')</label>
-                                    <input type="text" class="form-control form--control" name="state"
-                                        value="{{ old('state') }}">
-                                </div>
-                                <div class="form-group col-sm-6">
-                                    <label class="form-label">@lang('Zip Code')</label>
-                                    <input type="text" class="form-control form--control" name="zip"
-                                        value="{{ old('zip') }}">
-                                </div>
-                                <div class="form-group col-sm-6">
-                                    <label class="form-label">@lang('City')</label>
-                                    <input type="text" class="form-control form--control" name="city"
-                                        value="{{ old('city') }}">
+                                    <small class="text--danger usernameExist"></small>
                                 </div>
                             </div>
                     
-                                <button type="submit" class="btn btn--base w-100">
-                                    @lang('Submit')
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn--base">
+                                    @lang('Create Channel')
                                 </button>
+                            </div>
                         
                         </form>
                     </div>
@@ -105,88 +74,144 @@
     </section>
 @endsection
 
-@push('style-lib')
-    <link rel="stylesheet" href="{{ asset('assets/global/css/select2.min.css') }}">
-@endpush
 
-@push('script-lib')
-    <script src="{{ asset('assets/global/js/select2.min.js') }}"></script>
-@endpush
 
+@push('style')
+    <style>
+        .profile-upload-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-picture-upload {
+            text-align: center;
+        }
+
+        .profile-picture-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 1rem;
+            background: hsl(var(--bg-color));
+            border: 2px solid hsl(var(--white) / 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-picture-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .btn-select-picture {
+            display: inline-block;
+            padding: 10px 24px;
+            background: hsl(var(--base));
+            color: hsl(var(--white));
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-select-picture:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .channel-form-fields {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .handle-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .handle-prefix {
+            position: absolute;
+            left: 15px;
+            color: hsl(var(--text-color));
+            font-weight: 500;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .handle-input-wrapper .form--control {
+            padding-left: 35px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: hsl(var(--text-color));
+        }
+    </style>
+@endpush
 
 @push('script')
     <script>
         "use strict";
         (function($) {
 
-            @if ($mobileCode)
-                $(`option[data-code={{ $mobileCode }}]`).attr('selected', '');
-            @endif
-
-            $('.select2').select2();;
-
-            $('select[name=country]').on('change', function() {
-                $('input[name=mobile_code]').val($('select[name=country] :selected').data('mobile_code'));
-                $('input[name=country_code]').val($('select[name=country] :selected').data('code'));
-                $('.mobile-code').text('+' + $('select[name=country] :selected').data('mobile_code'));
-                var value = $('[name=mobile]').val();
-                var name = 'mobile';
-                checkUser(value, name);
+            // Profile picture preview
+            $('#profile_image').on('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#profilePreview').attr('src', e.target.result);
+                    }
+                    reader.readAsDataURL(file);
+                }
             });
 
-            $('input[name=mobile_code]').val($('select[name=country] :selected').data('mobile_code'));
-            $('input[name=country_code]').val($('select[name=country] :selected').data('code'));
-            $('.mobile-code').text('+' + $('select[name=country] :selected').data('mobile_code'));
-
-
+            // Username validation
             $('.checkUser').on('focusout', function(e) {
                 var value = $(this).val();
                 var name = $(this).attr('name')
                 checkUser(value, name);
             });
 
+            // Auto-lowercase and validate username format
+            $('#handleInput').on('input', function() {
+                var value = $(this).val().toLowerCase().replace(/[^a-z0-9_]/g, '');
+                $(this).val(value);
+            });
+
             function checkUser(value, name) {
                 var url = '{{ route('user.checkUser') }}';
                 var token = '{{ csrf_token() }}';
 
-                if (name == 'mobile') {
-                    var mobile = `${value}`;
-                    var data = {
-                        mobile: mobile,
-                        mobile_code: $('.mobile-code').text().substr(1),
-                        _token: token
-                    }
-                }
                 if (name == 'username') {
                     var data = {
                         username: value,
                         _token: token
                     }
+                    
+                    $.post(url, data, function(response) {
+                        if (response.data != false) {
+                            $(`.${response.type}Exist`).text(`${response.field} already exist`);
+                        } else {
+                            $(`.${response.type}Exist`).text('');
+                        }
+                    });
                 }
-                $.post(url, data, function(response) {
-                    if (response.data != false) {
-                        $(`.${response.type}Exist`).text(`${response.field} already exist`);
-                    } else {
-                        $(`.${response.type}Exist`).text('');
-                    }
-                });
             }
         })(jQuery);
     </script>
 @endpush
 
-@push('style')
-    <style>
-        .account-section .select2-container--default .select2-selection--single {
-            background-color: transparent !important;
-            border: 1px solid hsl(var(--white) / .2) !important;
-            padding-block: 13px !important;
-            padding: 0 !important;
-            height: 45px !important;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 45px !important;
-        }
-    </style>
-@endpush

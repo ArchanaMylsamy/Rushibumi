@@ -137,6 +137,30 @@ class RegisterController extends Controller
         $user->country_name = $data['country_name'];
         $user->address = $data['address'];
         
+        // Set mobile and dial_code for phone verification
+        // Extract dial_code from country_name
+        $countryData = json_decode(file_get_contents(resource_path('views/partials/country.json')), true);
+        $dialCode = null;
+        $countryCode = null;
+        
+        // Find country code and dial code from country name
+        foreach ($countryData as $code => $countryInfo) {
+            if (strtolower($countryInfo['country']) === strtolower($data['country_name'])) {
+                $countryCode = $code;
+                $dialCode = $countryInfo['dial_code'];
+                break;
+            }
+        }
+        
+        // Set mobile and dial_code (use phone_number as mobile, extract dial_code from country)
+        if ($dialCode) {
+            $user->dial_code = $dialCode;
+            $user->country_code = $countryCode;
+            // Use phone_number as mobile (assuming it's the number without country code)
+            $user->mobile = preg_replace('/^\+?' . preg_quote($dialCode, '/') . '/', '', $data['phone_number']);
+            $user->mobile = preg_replace('/[^0-9]/', '', $user->mobile); // Remove any non-numeric characters
+        }
+        
         // Government ID
         $user->government_id = $data['government_id'];
         $user->government_id_type = $data['government_id_type'];

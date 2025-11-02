@@ -199,31 +199,63 @@ class ManageUsersController extends Controller
         $dialCode       = $countryData->$countryCode->dial_code;
 
         $request->validate([
+            'surname' => 'nullable|string|max:40',
             'firstname' => 'required|string|max:40',
+            'middle_name' => 'nullable|string|max:40',
+            'family_name' => 'nullable|string|max:40',
             'lastname' => 'required|string|max:40',
+            'display_name' => 'required|string|max:100|unique:users,display_name,' . $user->id,
             'email' => 'required|email|string|max:40|unique:users,email,' . $user->id,
-            'mobile' => 'required|string|max:40',
+            'phone_number' => 'nullable|string|max:20',
             'country' => 'required|in:'.$countries,
+            'government_id_type' => 'nullable|string|max:50|in:Passport,Driver License,National ID,Aadhar Card,SSN,Voter ID,PAN Card,Other',
+            'government_id' => 'nullable|string|max:50',
         ]);
 
-        $exists = User::where('mobile',$request->mobile)->where('dial_code',$dialCode)->where('id','!=',$user->id)->exists();
-        if ($exists) {
-            $notify[] = ['error', 'The mobile number already exists.'];
-            return back()->withNotify($notify);
+        // Check phone_number uniqueness if provided
+        if ($request->phone_number) {
+            $exists = User::where('phone_number',$request->phone_number)->where('id','!=',$user->id)->exists();
+            if ($exists) {
+                $notify[] = ['error', 'The phone number already exists.'];
+                return back()->withNotify($notify);
+            }
+        }
+        
+        // Check government_id uniqueness if provided
+        if ($request->government_id) {
+            $exists = User::where('government_id',$request->government_id)->where('id','!=',$user->id)->exists();
+            if ($exists) {
+                $notify[] = ['error', 'The government ID already exists.'];
+                return back()->withNotify($notify);
+            }
         }
 
-        $user->mobile = $request->mobile;
+        // Name fields
+        $user->surname = $request->surname ?? null;
         $user->firstname = $request->firstname;
+        $user->middle_name = $request->middle_name ?? null;
+        $user->family_name = $request->family_name ?? null;
         $user->lastname = $request->lastname;
+        $user->display_name = $request->display_name;
+        
+        // Contact information
         $user->email = $request->email;
-
+        $user->phone_number = $request->phone_number ?? null;
         $user->address = $request->address;
-        $user->city = $request->city;
-        $user->state = $request->state;
-        $user->zip = $request->zip;
         $user->country_name = @$country;
         $user->dial_code = $dialCode;
         $user->country_code = $countryCode;
+        
+        // Extract mobile and dial_code from phone_number (for verification purposes)
+        if ($request->phone_number && $dialCode) {
+            // Extract mobile number (remove country code if present)
+            $user->mobile = preg_replace('/^\+?' . preg_quote($dialCode, '/') . '/', '', $request->phone_number);
+            $user->mobile = preg_replace('/[^0-9]/', '', $user->mobile); // Remove any non-numeric characters
+        }
+        
+        // Government ID
+        $user->government_id_type = $request->government_id_type ?? null;
+        $user->government_id = $request->government_id ?? null;
 
         $user->ev = $request->ev ? Status::VERIFIED : Status::UNVERIFIED;
         $user->sv = $request->sv ? Status::VERIFIED : Status::UNVERIFIED;

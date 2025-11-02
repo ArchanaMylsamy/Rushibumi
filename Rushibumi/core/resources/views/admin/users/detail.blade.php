@@ -164,7 +164,15 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>@lang('First Name')</label>
+                                            <label>@lang('Surname')</label>
+                                            <input class="form-control" type="text" name="surname"
+                                                   value="{{ $user->surname }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>@lang('First Name') <span class="text-danger">*</span></label>
                                             <input class="form-control" type="text" name="firstname" required
                                                    value="{{ $user->firstname }}">
                                         </div>
@@ -172,9 +180,33 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="form-control-label">@lang('Last Name')</label>
+                                            <label>@lang('Middle Name')</label>
+                                            <input class="form-control" type="text" name="middle_name"
+                                                   value="{{ $user->middle_name }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>@lang('Family Name')</label>
+                                            <input class="form-control" type="text" name="family_name"
+                                                   value="{{ $user->family_name }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-control-label">@lang('Last Name') <span class="text-danger">*</span></label>
                                             <input class="form-control" type="text" name="lastname" required
                                                    value="{{ $user->lastname }}">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>@lang('Display Name') <span class="text-danger">*</span></label>
+                                            <input class="form-control" type="text" name="display_name" required
+                                                   value="{{ $user->display_name }}">
                                         </div>
                                     </div>
 
@@ -188,48 +220,23 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>@lang('Mobile Number')</label>
-                                            <div class="input-group ">
-                                                <span class="input-group-text mobile-code">+{{ $user->dial_code }}</span>
-                                                <input type="number" name="mobile" value="{{ $user->mobile }}" id="mobile"
-                                                       class="form-control checkUser" required>
+                                            <label>@lang('Phone Number')</label>
+                                            <div class="phone-input-wrapper">
+                                                <input class="form-control phone" type="text" name="phone_number" id="phone_number"
+                                                       value="{{ $user->phone_number }}" placeholder="@lang('Enter phone number')">
+                                                <div class="country_code">
+                                                    <div class="country_code__caption">
+                                                        <span class="text mobile-code-display">+{{ $user->dial_code ?? '1' }}</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-
                                     <div class="col-md-12">
                                         <div class="form-group ">
-                                            <label>@lang('Address')</label>
-                                            <input class="form-control" type="text" name="address" value="{{ @$user->address }}">
-                                        </div>
-                                    </div>
-
-                                    <div class=" col-md-6">
-                                        <div class="form-group">
-                                            <label>@lang('City')</label>
-                                            <input class="form-control" type="text" name="city" value="{{ @$user->city }}">
-                                        </div>
-                                    </div>
-
-                                    <div class=" col-md-6">
-                                        <div class="form-group ">
-                                            <label>@lang('State')</label>
-                                            <input class="form-control" type="text" name="state" value="{{ @$user->state }}">
-                                        </div>
-                                    </div>
-
-                                    <div class=" col-md-6">
-                                        <div class="form-group ">
-                                            <label>@lang('Zip/Postal')</label>
-                                            <input class="form-control" type="text" name="zip" value="{{ @$user->zip }}">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-xl-6 col-md-6">
-                                        <div class="form-group ">
                                             <label>@lang('Country') <span class="text--danger">*</span></label>
-                                            <select name="country" class="form-control select2">
+                                            <select name="country" id="country-select" class="form-control select2">
                                                 @foreach ($countries as $key => $country)
                                                     <option data-mobile_code="{{ $country->dial_code }}" value="{{ $key }}"
                                                             @selected($user->country_code == $key)>{{ __($country->country) }}</option>
@@ -238,37 +245,75 @@
                                         </div>
                                     </div>
 
-                                    <div class=" col-md-3">
-                                        <div class="form-group">
-                                            <label>@lang('Email Verification')</label>
-                                            <input type="checkbox" data-width="100%" data-onstyle="-success" data-offstyle="-danger"
-                                                   data-bs-toggle="toggle" data-on="@lang('Verified')" data-off="@lang('Unverified')"
-                                                   name="ev" @if ($user->ev) checked @endif>
+                                    <div class="col-md-12">
+                                        <div class="form-group ">
+                                            <label>@lang('Address')</label>
+                                            <textarea class="form-control" name="address" rows="3">{{ @$user->address }}</textarea>
                                         </div>
                                     </div>
 
-                                    <div class=" col-md-3">
+                                    <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>@lang('Mobile Verification')</label>
-                                            <input type="checkbox" data-width="100%" data-onstyle="-success" data-offstyle="-danger"
-                                                   data-bs-toggle="toggle" data-on="@lang('Verified')" data-off="@lang('Unverified')"
-                                                   name="sv" @if ($user->sv) checked @endif>
+                                            <label>@lang('Government ID Type')</label>
+                                            <select class="form-control" name="government_id_type">
+                                                <option value="">@lang('Select ID Type')</option>
+                                                <option value="Passport" {{ $user->government_id_type == 'Passport' ? 'selected' : '' }}>Passport</option>
+                                                <option value="Driver License" {{ $user->government_id_type == 'Driver License' ? 'selected' : '' }}>Driver License</option>
+                                                <option value="National ID" {{ $user->government_id_type == 'National ID' ? 'selected' : '' }}>National ID</option>
+                                                <option value="Aadhar Card" {{ $user->government_id_type == 'Aadhar Card' ? 'selected' : '' }}>Aadhar Card</option>
+                                                <option value="SSN" {{ $user->government_id_type == 'SSN' ? 'selected' : '' }}>Social Security Number</option>
+                                                <option value="Voter ID" {{ $user->government_id_type == 'Voter ID' ? 'selected' : '' }}>Voter ID</option>
+                                                <option value="PAN Card" {{ $user->government_id_type == 'PAN Card' ? 'selected' : '' }}>PAN Card</option>
+                                                <option value="Other" {{ $user->government_id_type == 'Other' ? 'selected' : '' }}>Other</option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class=" col-md-3">
+
+                                    <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>@lang('2FA Verification') </label>
-                                            <input type="checkbox" data-width="100%" data-height="50" data-onstyle="-success"
-                                                   data-offstyle="-danger" data-bs-toggle="toggle" data-on="@lang('Enable')"
-                                                   data-off="@lang('Disable')" name="ts" @if ($user->ts) checked @endif>
+                                            <label>@lang('Government ID Number')</label>
+                                            <input class="form-control" type="text" name="government_id"
+                                                   value="{{ $user->government_id }}">
                                         </div>
                                     </div>
-                                    <div class=" col-md-3">
-                                        <div class="form-group">
-                                            <label>@lang('KYC') </label>
-                                            <input type="checkbox" data-width="100%" data-height="50" data-onstyle="-success"
-                                                   data-offstyle="-danger" data-bs-toggle="toggle" data-on="@lang('Verified')"
-                                                   data-off="@lang('Unverified')" name="kv" @if ($user->kv == Status::KYC_VERIFIED) checked @endif>
+
+                                    <div class="col-md-12">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>@lang('Email Verification')</label>
+                                                    <input type="checkbox" data-width="100%" data-onstyle="-success" data-offstyle="-danger"
+                                                           data-bs-toggle="toggle" data-on="@lang('Verified')" data-off="@lang('Unverified')"
+                                                           name="ev" @if ($user->ev) checked @endif>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>@lang('Mobile Verification')</label>
+                                                    <input type="checkbox" data-width="100%" data-onstyle="-success" data-offstyle="-danger"
+                                                           data-bs-toggle="toggle" data-on="@lang('Verified')" data-off="@lang('Unverified')"
+                                                           name="sv" @if ($user->sv) checked @endif>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>@lang('2FA Verification') </label>
+                                                    <input type="checkbox" data-width="100%" data-height="50" data-onstyle="-success"
+                                                           data-offstyle="-danger" data-bs-toggle="toggle" data-on="@lang('Enable')"
+                                                           data-off="@lang('Disable')" name="ts" @if ($user->ts) checked @endif>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label>@lang('KYC') </label>
+                                                    <input type="checkbox" data-width="100%" data-height="50" data-onstyle="-success"
+                                                           data-offstyle="-danger" data-bs-toggle="toggle" data-on="@lang('Verified')"
+                                                           data-off="@lang('Unverified')" name="kv" @if ($user->kv == Status::KYC_VERIFIED) checked @endif>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -339,17 +384,83 @@
            class="las la-sign-in-alt"></i>@lang('Login as User')</a>
 @endpush
 
+@push('style')
+    <style>
+        .phone-input-wrapper {
+            position: relative;
+        }
+        
+        .country_code {
+            width: 85px;
+            position: absolute;
+            left: 0;
+            top: 50%;
+            padding-left: 12px;
+            transform: translateY(-50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .form-control.phone {
+            padding-left: 95px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .country_code::after {
+            position: absolute;
+            content: "";
+            background: hsl(var(--heading-color));
+            width: 1px;
+            height: 11px;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto 0;
+        }
+
+        .country_code__caption {
+            padding: 0;
+            pointer-events: none;
+        }
+
+        .country_code__caption .text {
+            font-size: 0.875rem;
+            color: hsl(var(--heading-color));
+            display: inline-block;
+        }
+        
+        .form-control.phone:focus {
+            z-index: 1;
+        }
+        
+        .form-control.phone:focus ~ .country_code,
+        .country_code {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+@endpush
+
 @push('script')
     <script>
         (function($) {
             "use strict"
 
-
-
-
-            let mobileElement = $('.mobile-code');
-            $('select[name=country]').on('change', function() {
-                mobileElement.text(`+${$('select[name=country] :selected').data('mobile_code')}`);
+            let mobileElement = $('.mobile-code-display');
+            $('#country-select').on('change', function() {
+                const dialCode = $(this).find(':selected').data('mobile_code');
+                if (dialCode) {
+                    mobileElement.text(`+${dialCode}`);
+                }
+            });
+            
+            // Ensure country code is always visible and updates properly
+            $('#phone_number').on('focus', function() {
+                $('.country_code').css({
+                    'opacity': '1',
+                    'visibility': 'visible'
+                });
             });
 
         })(jQuery);

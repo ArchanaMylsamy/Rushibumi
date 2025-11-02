@@ -57,10 +57,10 @@
                     <label class="form--label d-block" for="">@lang('Phone Verification')</label>
 
                     <div class="input-group">
-                        <input class="form--control form-control phone sms" type="text" value="{{ $user->mobile }}" placeholder="Enter your number" readonly>
+                        <input class="form--control form-control phone sms" type="text" value="{{ $user->mobile ?? $user->phone_number }}" placeholder="Enter your number" readonly>
                         <div class="country_code" readonly>
                             <div class="country_code__caption">
-                                <span class="text">+{{ $user->dial_code }}</span>
+                                <span class="text">+{{ $user->dial_code ?? '1' }}</span>
                             </div>
 
                         </div>
