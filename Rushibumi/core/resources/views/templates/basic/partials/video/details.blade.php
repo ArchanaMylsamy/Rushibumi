@@ -29,7 +29,7 @@
                 </div>
                 <div class="uploaded-item__content">
 
-                    @if (!$video->is_shorts_video && !$video->storage_id)
+                    @if (!$video->storage_id)
                         <canvas id="videoCanvas" style="display:none;"></canvas>
                         <button class="thumbGenerate mt-3">
                             <i class="las la-magic icon"></i> @lang('Generate Thumbnail')
@@ -116,40 +116,38 @@
                         </label>
                     </div>
                 </div>
-                @if (!$video->is_shorts_video)
-                    <div class="upload-thumbnail">
-                        <h6 class="upload-thumbnail__title">@lang('Thumbnail')</h6>
-                        <p class="upload-thumbnail__desc">
-                            @lang('Select or upload a picture that show’s what’s in your video. A good thumbnail stands out and draws viewer\'s attention.')
-                            <small class="test">@lang('Thumbnail size will be'): {{ getFileSize('thumbnail') }} px</small>
+                <div class="upload-thumbnail">
+                    <h6 class="upload-thumbnail__title">@lang('Thumbnail')</h6>
+                    <p class="upload-thumbnail__desc">
+                        @lang('Select or upload a picture that show\'s what\'s in your video. A good thumbnail stands out and draws viewer\'s attention.')
+                        <small class="test">@lang('Thumbnail size will be'): {{ getFileSize('thumbnail') }} px</small>
 
-                        </p>
+                    </p>
 
-                        <div class="bottom">
-                            <div class="bottom__inner">
-                                <div class="video-thumb-upload">
-                                    <div class="video-thumb-upload__avatarPreview">
-                                        <div class="video-thumb-upload__thumbnailPreview preview">
-                                            @if ($video->thumb_image)
-                                                <img src="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image, getFileThumb('thumbnail')) }}"
-                                                    alt="image">
-                                            @endif
-                                        </div>
+                    <div class="bottom">
+                        <div class="bottom__inner">
+                            <div class="video-thumb-upload">
+                                <div class="video-thumb-upload__avatarPreview">
+                                    <div class="video-thumb-upload__thumbnailPreview preview">
+                                        @if ($video->thumb_image)
+                                            <img src="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image, getFileThumb('thumbnail')) }}"
+                                                alt="image">
+                                        @endif
                                     </div>
-                                    <div class="video-thumb-upload__avatarEdit">
-                                        <input id="upload-image" name="thumb_image" type="file"
-                                            accept=".png, .jpg, .jpeg">
-                                        <label class="video-thumb-upload__box" for="upload-image">
-                                            <span class="icon"><i class="vti-add-photo"></i></span>
-                                            <span class="text">@lang('Upload Thumbnail')</span>
-                                        </label><br>
-                                    </div>
-
                                 </div>
+                                <div class="video-thumb-upload__avatarEdit">
+                                    <input id="upload-image" name="thumb_image" type="file"
+                                        accept=".png, .jpg, .jpeg">
+                                    <label class="video-thumb-upload__box" for="upload-image">
+                                        <span class="icon"><i class="vti-add-photo"></i></span>
+                                        <span class="text">@lang('Upload Thumbnail')</span>
+                                    </label><br>
+                                </div>
+
                             </div>
                         </div>
                     </div>
-                @endif
+                </div>
 
                 <div class="form-group upload-buttons mb-0">
 
@@ -420,7 +418,7 @@
                             $('[name="title"]').val(response.data.title);
                             var description = response.data.description.replace(/\n/g, '<br>');
                             $('.nicEdit-main').html(description);
-                            if (!shorts) {
+                            if (response.data.thumb_base64) {
                                 selectThumbnail(response.data.thumb_base64)
                             }
 

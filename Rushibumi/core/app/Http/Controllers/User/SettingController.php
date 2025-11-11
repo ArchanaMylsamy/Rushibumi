@@ -18,7 +18,7 @@ class SettingController extends Controller {
     public function updateAccount(Request $request) {
         $request->validate([
             'channel_name'        => 'required|string|max:255',
-            'channel_description' => 'required|string',
+            'channel_description' => 'nullable|string',
             'image'               => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
             'cover_image'         => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])],
         ]);

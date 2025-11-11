@@ -6,6 +6,12 @@ use App\Http\Controllers\Api\VideoController;
 use App\Http\Controllers\Api\ShortController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\WatchHistoryController;
+use App\Http\Controllers\Api\ChannelController;
+use App\Http\Controllers\Api\WatchLaterController;
+use App\Http\Controllers\Api\PlaylistController;
+use App\Http\Controllers\Api\AccountSettingController;
+use App\Http\Controllers\Api\ReactionController;
+use App\Http\Controllers\Api\SubscribeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +26,7 @@ use App\Http\Controllers\Api\WatchHistoryController;
 Route::prefix('api')->group(function () {
     
     // Public API Routes
+    Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     
     // Get Categories (for sidebar)
@@ -27,8 +34,10 @@ Route::prefix('api')->group(function () {
     
     // Get Videos and Shorts (Public - no authentication required)
     Route::get('videos', [VideoController::class, 'index']);
+    Route::get('videos/search', [VideoController::class, 'search']); // Search and filter videos
     Route::get('videos/category/{identifier}', [VideoController::class, 'byCategorySlug']); // Accepts both slug and ID
     Route::get('shorts', [ShortController::class, 'index']);
+    Route::get('shorts/search', [ShortController::class, 'search']); // Search and filter shorts
     
     // Protected Routes (Require Authentication Token)
     Route::middleware('auth:sanctum')->group(function () {
@@ -44,6 +53,57 @@ Route::prefix('api')->group(function () {
             Route::delete('remove/{videoId}', [WatchHistoryController::class, 'remove'])->name('remove');
             Route::delete('remove-by-id/{historyId}', [WatchHistoryController::class, 'removeById'])->name('remove-by-id');
             Route::delete('remove-all', [WatchHistoryController::class, 'removeAll'])->name('remove-all');
+        });
+        
+        // Channel Routes
+        Route::prefix('channel')->name('channel.')->group(function () {
+            Route::get('/', [ChannelController::class, 'show'])->name('show');
+            Route::post('create', [ChannelController::class, 'create'])->name('create');
+        });
+        
+        // Watch Later Routes
+        Route::prefix('watch-later')->name('watch-later.')->group(function () {
+            Route::get('/', [WatchLaterController::class, 'index'])->name('index');
+            Route::post('add/{videoId}', [WatchLaterController::class, 'add'])->name('add');
+            Route::delete('remove/{videoId}', [WatchLaterController::class, 'remove'])->name('remove');
+            Route::post('toggle/{videoId}', [WatchLaterController::class, 'toggle'])->name('toggle');
+        });
+        
+        // Playlist Routes
+        Route::prefix('playlists')->name('playlists.')->group(function () {
+            Route::get('/', [PlaylistController::class, 'index'])->name('index');
+            Route::post('/', [PlaylistController::class, 'store'])->name('store');
+            Route::get('{id}', [PlaylistController::class, 'show'])->name('show');
+            Route::put('{id}', [PlaylistController::class, 'update'])->name('update');
+            Route::delete('{id}', [PlaylistController::class, 'destroy'])->name('destroy');
+            Route::post('{id}/videos', [PlaylistController::class, 'addVideo'])->name('add-video');
+            Route::delete('{id}/videos/{videoId}', [PlaylistController::class, 'removeVideo'])->name('remove-video');
+        });
+        
+        // Account Settings Routes
+        Route::prefix('account')->name('account.')->group(function () {
+            Route::get('/', [AccountSettingController::class, 'show'])->name('show');
+            Route::put('/', [AccountSettingController::class, 'update'])->name('update');
+            Route::put('profile', [AccountSettingController::class, 'updateProfile'])->name('update-profile');
+            Route::post('change-password', [AccountSettingController::class, 'changePassword'])->name('change-password');
+        });
+        
+        // Reaction Routes (Like/Dislike)
+        Route::prefix('reactions')->name('reactions.')->group(function () {
+            Route::post('like/{videoId}', [ReactionController::class, 'like'])->name('like');
+            Route::post('dislike/{videoId}', [ReactionController::class, 'dislike'])->name('dislike');
+            Route::post('toggle/{videoId}', [ReactionController::class, 'toggle'])->name('toggle');
+            Route::get('status/{videoId}', [ReactionController::class, 'status'])->name('status');
+        });
+        
+        // Subscribe Routes
+        Route::prefix('subscribe')->name('subscribe.')->group(function () {
+            Route::post('toggle/{userId}', [SubscribeController::class, 'toggle'])->name('toggle');
+            Route::post('{userId}', [SubscribeController::class, 'subscribe'])->name('subscribe');
+            Route::delete('{userId}', [SubscribeController::class, 'unsubscribe'])->name('unsubscribe');
+            Route::get('status/{userId}', [SubscribeController::class, 'status'])->name('status');
+            Route::get('my-subscriptions', [SubscribeController::class, 'mySubscriptions'])->name('my-subscriptions');
+            Route::get('subscribers/{userId}', [SubscribeController::class, 'subscribers'])->name('subscribers');
         });
         
     });
