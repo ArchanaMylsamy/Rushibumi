@@ -73,12 +73,23 @@ class ChannelController extends Controller
     /**
      * Get Channel Info
      */
-    public function show(Request $request)
+    public function show(Request $request, $userId)
     {
-        $user = $request->user();
+        // Find the requested user's channel
+        $user = User::where('id', $userId)
+            ->where('profile_complete', Status::YES)
+            ->active()
+            ->first();
 
-        if ($user->profile_complete != Status::YES) {
-            return responseError('channel_not_found', ['Channel not created yet']);
+        if (!$user) {
+            return responseError('channel_not_found', ['Channel not found']);
+        }
+
+        // Get authenticated user to check subscription status
+        $authUser = $request->user();
+        $isSubscribed = false;
+        if ($authUser) {
+            $isSubscribed = $user->subscribers()->where('following_id', $authUser->id)->exists();
         }
 
         return responseSuccess('channel_fetched', 'Channel fetched successfully', [
@@ -91,6 +102,7 @@ class ChannelController extends Controller
                 'description' => $user->description ?? null,
                 'subscriber_count' => $user->subscribers()->count(),
                 'video_count' => $user->videos()->published()->count(),
+                'is_subscribed' => $isSubscribed,
             ]
         ]);
     }

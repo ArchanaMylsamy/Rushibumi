@@ -36,6 +36,8 @@ Route::prefix('api')->group(function () {
     Route::get('videos', [VideoController::class, 'index']);
     Route::get('videos/search', [VideoController::class, 'search']); // Search and filter videos
     Route::get('videos/category/{identifier}', [VideoController::class, 'byCategorySlug']); // Accepts both slug and ID
+    Route::get('videos/{id}/suggestions', [VideoController::class, 'suggestions']); // Get related/suggested videos (must be before videos/{id})
+    Route::get('videos/{id}', [VideoController::class, 'show']); // Get single video details
     Route::get('shorts', [ShortController::class, 'index']);
     Route::get('shorts/search', [ShortController::class, 'search']); // Search and filter shorts
     
@@ -57,7 +59,7 @@ Route::prefix('api')->group(function () {
         
         // Channel Routes
         Route::prefix('channel')->name('channel.')->group(function () {
-            Route::get('/', [ChannelController::class, 'show'])->name('show');
+            Route::get('{userId}', [ChannelController::class, 'show'])->name('show');
             Route::post('create', [ChannelController::class, 'create'])->name('create');
         });
         
@@ -104,6 +106,23 @@ Route::prefix('api')->group(function () {
             Route::get('status/{userId}', [SubscribeController::class, 'status'])->name('status');
             Route::get('my-subscriptions', [SubscribeController::class, 'mySubscriptions'])->name('my-subscriptions');
             Route::get('subscribers/{userId}', [SubscribeController::class, 'subscribers'])->name('subscribers');
+        });
+        
+        // Video Upload Routes
+        Route::prefix('videos')->name('videos.')->group(function () {
+            Route::post('upload-chunk/{id?}', [VideoController::class, 'uploadChunk'])->name('upload-chunk');
+            Route::post('merge-chunks/{id?}', [VideoController::class, 'mergeChunks'])->name('merge-chunks');
+            Route::post('{id}/details', [VideoController::class, 'submitDetails'])->name('submit-details');
+            Route::post('{id}/elements', [VideoController::class, 'submitElements'])->name('submit-elements');
+            Route::post('{id}/visibility', [VideoController::class, 'submitVisibility'])->name('submit-visibility');
+        });
+        
+        // Shorts Upload Routes
+        Route::prefix('shorts')->name('shorts.')->group(function () {
+            Route::post('upload-chunk/{id?}', [ShortController::class, 'uploadChunk'])->name('upload-chunk');
+            Route::post('merge-chunks/{id?}', [ShortController::class, 'mergeChunks'])->name('merge-chunks');
+            Route::post('{id}/details', [ShortController::class, 'submitDetails'])->name('submit-details');
+            Route::post('{id}/visibility', [ShortController::class, 'submitVisibility'])->name('submit-visibility');
         });
         
     });
