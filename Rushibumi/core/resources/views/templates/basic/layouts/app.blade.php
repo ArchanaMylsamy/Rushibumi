@@ -40,6 +40,10 @@
             background-color: hsl(var(--black));
         }
     </style>
+    
+    <!-- Preconnect to improve resource loading -->
+    <link rel="preconnect" href="{{ url('/') }}">
+    <link rel="dns-prefetch" href="{{ url('/') }}">
 
 </head>
 @php echo loadExtension('google-analytics') @endphp
@@ -117,8 +121,71 @@
 
             function appendVideos(videos) {
                 $('.video-wrapper').append(videos);
-                playersInitiate();
+                // Call global playersInitiate if it exists, otherwise initialize directly
+                if (typeof playersInitiate === 'function') {
+                    playersInitiate();
+                } else {
+                    // Fallback initialization
+                    initializeVideoPlayers();
+                }
             }
+
+            // Global function to initialize video players
+            function initializeVideoPlayers() {
+                const videoPlayers = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+                
+                if (videoPlayers.length === 0) return;
+                
+                // First, initialize videos that are already visible
+                videoPlayers.forEach(videoEl => {
+                    const rect = videoEl.getBoundingClientRect();
+                    const isVisible = rect.top < window.innerHeight + 100 && rect.bottom > -100;
+                    
+                    if (isVisible && !videoEl.hasAttribute('data-plyr-initialized')) {
+                        try {
+                            const player = new Plyr(videoEl, {
+                                controls: [],
+                                ratio: '16:9',
+                                muted: true,
+                            });
+                            videoEl.setAttribute('data-plyr-initialized', 'true');
+                        } catch (e) {
+                            console.warn('Plyr initialization error:', e);
+                        }
+                    }
+                });
+                
+                // Then set up observer for videos not yet visible
+                const remainingVideos = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+                if (remainingVideos.length === 0) return;
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !entry.target.hasAttribute('data-plyr-initialized')) {
+                            try {
+                                const player = new Plyr(entry.target, {
+                                    controls: [],
+                                    ratio: '16:9',
+                                    muted: true,
+                                });
+                                entry.target.setAttribute('data-plyr-initialized', 'true');
+                                observer.unobserve(entry.target);
+                            } catch (e) {
+                                console.warn('Plyr initialization error:', e);
+                            }
+                        }
+                    });
+                }, {
+                    rootMargin: '100px'
+                });
+                
+                remainingVideos.forEach(player => {
+                    observer.observe(player);
+                });
+            }
+
+            // Make it globally available
+            window.playersInitiate = initializeVideoPlayers;
 
     </script>
 
@@ -222,51 +289,118 @@
 
 
 
-            // for video
+            // for video - Optimized with caching and debounce
 
             let loader;
             let player;
             let mouseleaveClass;
+            let videoSourceCache = {}; // Cache video sources to avoid repeated AJAX calls
+            let hoverTimeout = null;
+
+            // Debounce function
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
 
             $(document).on('mouseenter', '.autoPlay', function() {
                 if (!isScrolling) {
-                    parent = $(this);
+                    const parent = $(this);
                     loader = parent.find('.video-loader');
-                    player = parent.find('.video-player')[0];
-                    const id = parent.data('video_id')
+                    const videoElement = parent.find('.video-player')[0];
+                    const id = parent.data('video_id');
 
-                    loader.show()
+                    if (!videoElement) return;
 
-                    $.ajax({
-                        type: "GET",
-                        url: `{{ route('get.video.source', '') }}/${id}`,
-                        success: function(response) {
-                            if (response.status === 'success') {
-                                loader.hide()
-                                const src =
-                                    `<source src="${response?.path}" type="video/mp4" size="${response?.quality}" />`;
-                                parent.find('.video-player').empty().append(src);
-                            }
-                        },
-                        error: function(error) {
-                            loader.hide();
+                    // Clear any existing timeout
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                    }
+
+                    // Ensure Plyr is initialized for this video
+                    if (!videoElement.hasAttribute('data-plyr-initialized')) {
+                        try {
+                            const plyrPlayer = new Plyr(videoElement, {
+                                controls: [],
+                                ratio: '16:9',
+                                muted: true,
+                            });
+                            videoElement.setAttribute('data-plyr-initialized', 'true');
+                        } catch (e) {
+                            console.warn('Plyr initialization error on hover:', e);
                         }
-                    });
+                    }
 
-                    player.load();
-                    player.muted = true;
-                    player.play().catch(function(error) {
-                        console.warn('Autoplay failed:', error);
-                    });
+                    // Debounce the video loading
+                    hoverTimeout = setTimeout(function() {
+                        // Check cache first
+                        if (videoSourceCache[id]) {
+                            loader.hide();
+                            const src = `<source src="${videoSourceCache[id].path}" type="video/mp4" size="${videoSourceCache[id].quality}" />`;
+                            parent.find('.video-player').empty().append(src);
+                            videoElement.load();
+                            videoElement.muted = true;
+                            videoElement.play().catch(function(error) {
+                                console.warn('Autoplay failed:', error);
+                            });
+                            return;
+                        }
+
+                        loader.show();
+
+                        $.ajax({
+                            type: "GET",
+                            url: `{{ route('get.video.source', '') }}/${id}`,
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    // Cache the response
+                                    videoSourceCache[id] = {
+                                        path: response.path,
+                                        quality: response.quality
+                                    };
+                                    
+                                    loader.hide();
+                                    const src = `<source src="${response?.path}" type="video/mp4" size="${response?.quality}" />`;
+                                    parent.find('.video-player').empty().append(src);
+                                    videoElement.load();
+                                    videoElement.muted = true;
+                                    videoElement.play().catch(function(error) {
+                                        console.warn('Autoplay failed:', error);
+                                    });
+                                } else {
+                                    loader.hide();
+                                }
+                            },
+                            error: function(error) {
+                                loader.hide();
+                                console.warn('Video source loading error:', error);
+                            }
+                        });
+                    }, 200); // 200ms debounce delay
                 }
-            })
-
+            });
 
             $(document).on('mouseleave', '.autoPlay', function() {
-                player.pause();
-                player.currentTime = 0;
-                $(this).find('.video-player').empty();
-                loader.hide();
+                // Clear timeout if user leaves before video loads
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                    hoverTimeout = null;
+                }
+                
+                const videoElement = $(this).find('.video-player')[0];
+                if (videoElement) {
+                    videoElement.pause();
+                    videoElement.currentTime = 0;
+                    $(this).find('.video-player').empty();
+                }
+                if (loader) loader.hide();
             });
 
 

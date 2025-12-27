@@ -23,7 +23,7 @@
                 <form class="search-form" action="{{ route('search') }}">
                     <div class="form-group">
                         <input class="form--control" name="search" type="text" value="{{ request()->search }}"
-                            placeholder="Search Here...">
+                            ">
                         <button class="search-form-btn" type="submit">
                             <i class="vti-search"></i>
                         </button>

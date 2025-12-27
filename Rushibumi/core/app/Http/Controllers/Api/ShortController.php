@@ -445,10 +445,15 @@ class ShortController extends Controller
             if ($oldTags) {
                 $video->tags()->delete();
             }
+            
+            // Get category name as subject for subject-based tagging
+            $subject = $video->category ? $video->category->name : null;
+            
             foreach ($request->tags as $tag) {
                 $videoTag           = new VideoTag();
                 $videoTag->video_id = $video->id;
                 $videoTag->tag      = $tag;
+                $videoTag->subject  = $subject; // Store subject for sequential tagging
                 $videoTag->save();
             }
         }

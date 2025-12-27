@@ -38,6 +38,9 @@
                     </svg>
                 </div>
             @endif
+            @if($relatedVideo->duration)
+                <span class="video-item__duration">{{ $relatedVideo->duration }}</span>
+            @endif
         </a>
         <div class="video-item__content">
             <h6 class="title">

@@ -335,9 +335,18 @@
   // =========================================================================================================
 
   // ========================= Preloader Js Start =====================
-  $(window).on("load", function () {
-    $(".preloader").fadeOut();
+  // Optimize preloader - hide faster, don't wait for all resources
+  $(document).ready(function() {
+    // Hide preloader after DOM is ready, don't wait for all images/videos
+    setTimeout(function() {
+      $(".preloader").fadeOut(300);
+    }, 500); // Reduced from waiting for window.load
   });
+  
+  // Fallback: hide preloader after max 3 seconds even if resources are still loading
+  setTimeout(function() {
+    $(".preloader").fadeOut(300);
+  }, 3000);
 
   document.addEventListener("DOMContentLoaded", () => {
     $("body").css("display", "block");

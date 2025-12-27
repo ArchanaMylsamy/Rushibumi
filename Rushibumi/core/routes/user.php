@@ -231,6 +231,7 @@ Route::middleware('auth')
 
                         Route::post('add-playlist', "addPlaylist")->name('add.playlist');
                         Route::get('fetch-tags', 'fatchTags')->name('fatch.tags');
+                        Route::post('delete/{id}', 'delete')->name('delete');
                     });
 
                 Route::controller('ShortsController')
@@ -245,6 +246,7 @@ Route::middleware('auth')
                         Route::get('visibility-form/{id?}', 'visibilityForm')->name('visibility.form');
                         Route::post('visibility-submit/{id}', 'visibilitySubmit')->name('visibility.submit');
                         Route::get('edit/{id}', 'editShorts')->name('edit');
+                        Route::post('delete/{id}', 'delete')->name('delete');
                     });
 
                 Route::controller('AdsController')

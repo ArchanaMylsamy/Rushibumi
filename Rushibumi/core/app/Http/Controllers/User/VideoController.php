@@ -7,10 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Playlist;
 use App\Models\Subtitle;
 use App\Models\Video;
+use App\Models\WatchHistory;
+use App\Models\WatchLater;
 use App\Rules\FileTypeValidate;
 use App\Traits\VideoManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class VideoController extends Controller
 {
@@ -170,5 +173,110 @@ class VideoController extends Controller
         $video->playlists()->detach();
         $video->playlists()->attach($request->playlist_id);
         return response()->json(['success' => "Video successfully added to the playlist"]);
+    }
+
+    public function delete($id)
+    {
+        try {
+            $id = decrypt($id);
+            $video = Video::authUser()->with('videoFiles', 'subtitles', 'tags', 'storage')->findOrFail($id);
+            
+            // Double check: Ensure video belongs to current user
+            if ($video->user_id != auth()->id()) {
+                $notify[] = ['error', 'You do not have permission to delete this video'];
+                return back()->withNotify($notify);
+            }
+
+            // Delete video files
+            foreach ($video->videoFiles as $videoFile) {
+                if ($video->storage) {
+                    $this->removeOldFile($video, $video->storage, $videoFile->file_name, 'videos');
+                } else {
+                    $filePath = getFilePath('video') . '/' . $videoFile->file_name;
+                    if (file_exists($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+                $videoFile->delete();
+            }
+
+            // Delete old video file if exists (for shorts or non-multi-quality videos)
+            if ($video->video) {
+                if ($video->storage) {
+                    $this->removeOldFile($video, $video->storage, $video->video, 'videos');
+                } else {
+                    $filePath = getFilePath('video') . '/' . $video->video;
+                    if (file_exists($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+            }
+
+            // Delete thumbnail
+            if ($video->thumb_image) {
+                $thumbPath = getFilePath('thumbnail') . '/' . $video->thumb_image;
+                $thumbThumbPath = getFilePath('thumbnail') . '/thumb_' . $video->thumb_image;
+                if (file_exists($thumbPath)) {
+                    @unlink($thumbPath);
+                }
+                if (file_exists($thumbThumbPath)) {
+                    @unlink($thumbThumbPath);
+                }
+            }
+
+            // Delete subtitles
+            foreach ($video->subtitles as $subtitle) {
+                $subtitlePath = getFilePath('subtitle') . '/' . $subtitle->file;
+                if (file_exists($subtitlePath)) {
+                    @unlink($subtitlePath);
+                }
+                $subtitle->delete();
+            }
+
+            // Delete tags
+            $video->tags()->delete();
+
+            // Detach from playlists and plans (pivot tables)
+            $video->playlists()->detach();
+            $video->plans()->detach();
+
+            // Delete related data (cascade should handle most, but being explicit)
+            $video->userReactions()->delete();
+            $video->allComments()->delete();
+            $video->adPlayDurations()->delete();
+
+            // Delete watch history and watch later entries
+            WatchHistory::where('video_id', $video->id)->delete();
+            WatchLater::where('video_id', $video->id)->delete();
+
+            // Get video ID before deletion for cleanup
+            $videoId = $video->id;
+            
+            // Change status to draft first to prevent it from showing in public queries immediately
+            $video->status = \App\Constants\Status::DRAFT;
+            $video->visibility = \App\Constants\Status::PRIVATE;
+            $video->is_trending = \App\Constants\Status::NO; // Remove from trending
+            $video->save();
+            
+            // Delete the video record (hard delete)
+            $deleted = $video->delete();
+            
+            // Verify deletion - force delete if needed
+            if (!$deleted || Video::find($videoId)) {
+                // Force delete from database
+                DB::table('videos')->where('id', $videoId)->where('user_id', auth()->id())->delete();
+            }
+            
+            // Clear cache to remove any cached video lists
+            if (function_exists('cache')) {
+                cache()->flush();
+            }
+
+            $notify[] = ['success', 'Video deleted successfully'];
+            return redirect()->route('user.videos')->withNotify($notify);
+        } catch (\Exception $e) {
+            $notify[] = ['error', 'Failed to delete video: ' . $e->getMessage()];
+            return back()->withNotify($notify);
+        }
     }
 }

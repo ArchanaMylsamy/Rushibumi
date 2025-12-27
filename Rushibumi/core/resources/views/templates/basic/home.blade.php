@@ -246,10 +246,56 @@
         });
 
         function playersInitiate() {
-            const players = Plyr.setup('.video-player', {
-                controls,
-                ratio: '16:9',
-                muted: true,
+            // Initialize players for visible videos using Intersection Observer
+            const videoPlayers = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+            
+            if (videoPlayers.length === 0) return;
+            
+            // First, initialize videos that are already visible
+            videoPlayers.forEach(videoEl => {
+                const rect = videoEl.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight + 100 && rect.bottom > -100;
+                
+                if (isVisible && !videoEl.hasAttribute('data-plyr-initialized')) {
+                    try {
+                        const player = new Plyr(videoEl, {
+                            controls,
+                            ratio: '16:9',
+                            muted: true,
+                        });
+                        videoEl.setAttribute('data-plyr-initialized', 'true');
+                    } catch (e) {
+                        console.warn('Plyr initialization error:', e);
+                    }
+                }
+            });
+            
+            // Then set up observer for videos not yet visible
+            const remainingVideos = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+            if (remainingVideos.length === 0) return;
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.hasAttribute('data-plyr-initialized')) {
+                        try {
+                            const player = new Plyr(entry.target, {
+                                controls,
+                                ratio: '16:9',
+                                muted: true,
+                            });
+                            entry.target.setAttribute('data-plyr-initialized', 'true');
+                            observer.unobserve(entry.target);
+                        } catch (e) {
+                            console.warn('Plyr initialization error:', e);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '100px' // Start loading 100px before video enters viewport
+            });
+            
+            remainingVideos.forEach(player => {
+                observer.observe(player);
             });
         }
 

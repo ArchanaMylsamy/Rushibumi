@@ -20,6 +20,11 @@
                                 <div class="video-item__manage mt-3 me-3">
                                     <a class="video-item__edit" href="{{ route('user.shorts.edit', $video->id) }}"><i
                                            class="las la-edit"></i></a>
+                                    <a class="video-item__edit confirmationBtn" 
+                                       href="javascript:void(0)"
+                                       data-action="{{ route('user.shorts.delete', encrypt($video->id)) }}"
+                                       data-question="@lang('Are you sure you want to delete this short? This action cannot be undone.')"
+                                       style="color: #dc3545;"><i class="las la-trash"></i></a>
                                 </div>
                                 <div class="video-item__content">
                                     <h5 class="title">
@@ -55,10 +60,47 @@
             </div>
         </div>
     </div>
+    
+    <x-confirmation-modal frontend="true" />
 @endsection
 
 @push('style')
     <style>
+        .video-item__manage {
+            display: flex !important;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .video-item__edit.confirmationBtn {
+            color: #dc3545 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: grid !important;
+            place-content: center !important;
+            border-color: rgba(220, 53, 69, 0.3) !important;
+            background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+        
+        .video-item__edit.confirmationBtn:hover {
+            background-color: rgba(220, 53, 69, 0.2) !important;
+            border-color: #dc3545 !important;
+        }
+        
+        .video-item__edit.confirmationBtn i {
+            color: #dc3545 !important;
+            font-size: 18px !important;
+        }
+        
+        .video-item__edit.confirmationBtn:hover i {
+            color: #c82333 !important;
+        }
+        
+        .video-item__edit i {
+            font-size: 18px;
+        }
+        
         .dashboard-video {
             grid-template-columns: repeat(4, 1fr);
         }

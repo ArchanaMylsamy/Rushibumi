@@ -36,6 +36,12 @@
                                             <a class="video-item__edit @if ($video->status != Status::PUBLISHED) disabled-link @endif  "
                                                 href="{{ route('user.video.analytics', @$video->slug) }}"><i
                                                     class="las la-chart-pie"></i></a>
+                                            
+                                            <a class="video-item__edit confirmationBtn" 
+                                                href="javascript:void(0)"
+                                                data-action="{{ route('user.video.delete', encrypt($video->id)) }}"
+                                                data-question="@lang('Are you sure you want to delete this video? This action cannot be undone.')"
+                                                style="color: #dc3545;"><i class="las la-trash"></i></a>
 
                                         </div>
 
@@ -77,6 +83,8 @@
             </div>
         </div>
     </div>
+    
+    <x-confirmation-modal frontend="true" />
 @endsection
 
 
@@ -89,6 +97,37 @@
             /* Bootstrap's disabled color */
             text-decoration: none;
             /* Remove underline if needed */
+        }
+        
+        .video-item__manage {
+            display: flex !important;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .video-item__edit.confirmationBtn {
+            color: #dc3545 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: grid !important;
+            place-content: center !important;
+            border-color: rgba(220, 53, 69, 0.3) !important;
+            background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+        
+        .video-item__edit.confirmationBtn:hover {
+            background-color: rgba(220, 53, 69, 0.2) !important;
+            border-color: #dc3545 !important;
+        }
+        
+        .video-item__edit.confirmationBtn i {
+            color: #dc3545 !important;
+            font-size: 18px !important;
+        }
+        
+        .video-item__edit.confirmationBtn:hover i {
+            color: #c82333 !important;
         }
     </style>
 @endpush

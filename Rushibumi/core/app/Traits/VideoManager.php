@@ -438,10 +438,15 @@ trait VideoManager
             if ($oldTags) {
                 $video->tags()->delete();
             }
+            
+            // Get category name as subject for subject-based tagging
+            $subject = $video->category ? $video->category->name : null;
+            
             foreach ($request->tags as $tag) {
                 $videoTag           = new VideoTag();
                 $videoTag->video_id = $video->id;
                 $videoTag->tag      = $tag;
+                $videoTag->subject  = $subject; // Store subject for sequential tagging
                 $videoTag->save();
             }
         }
@@ -822,25 +827,126 @@ trait VideoManager
     {
         $validator = Validator::make($request->all(), [
             'search' => 'nullable|string',
+            'category_id' => 'nullable|integer',
+            'video_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors());
         }
 
-        $tags = VideoTag::searchable(['tag'])->groupBy('tag')
-            ->select('id', 'tag')->groupBy('tag')
-            ->paginate(getPaginate($request->rows ?? 10));
-
         $response = [];
+        $search = $request->search ?? '';
+        $categoryId = $request->category_id;
+        $videoId = $request->video_id;
+        $userId = auth()->id();
 
-        foreach ($tags as $tag) {
+        // 1. Get user's previous tags (sequential - most used tags first)
+        $userTags = VideoTag::whereHas('video', function($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->when($categoryId, function($q) use ($categoryId) {
+                $q->whereHas('video', function($query) use ($categoryId) {
+                    $query->where('category_id', $categoryId);
+                });
+            })
+            ->when($search, function($q) use ($search) {
+                $q->where('tag', 'like', '%' . $search . '%');
+            })
+            ->selectRaw('tag, subject, COUNT(*) as usage_count')
+            ->groupBy('tag', 'subject')
+            ->orderBy('usage_count', 'desc')
+            ->orderBy('tag', 'asc')
+            ->limit(20)
+            ->get();
+
+        foreach ($userTags as $tag) {
             $response[] = [
                 'id'   => $tag->tag,
                 'text' => $tag->tag,
+                'subject' => $tag->subject,
+                'type' => 'user_sequential', // Mark as user's sequential tag
             ];
         }
-        return response()->json($response);
+
+        // 2. Get category-based tags (subject-based from similar videos)
+        if ($categoryId) {
+            $categoryTags = VideoTag::whereHas('video', function($q) use ($categoryId, $userId) {
+                    $q->where('category_id', $categoryId)
+                      ->where('user_id', '!=', $userId); // Exclude user's own videos
+                })
+                ->when($search, function($q) use ($search) {
+                    $q->where('tag', 'like', '%' . $search . '%');
+                })
+                ->selectRaw('tag, subject, COUNT(*) as usage_count')
+                ->groupBy('tag', 'subject')
+                ->orderBy('usage_count', 'desc')
+                ->limit(15)
+                ->get();
+
+            foreach ($categoryTags as $tag) {
+                // Avoid duplicates
+                $exists = collect($response)->contains(function($item) use ($tag) {
+                    return $item['id'] === $tag->tag;
+                });
+                
+                if (!$exists) {
+                    $response[] = [
+                        'id'   => $tag->tag,
+                        'text' => $tag->tag,
+                        'subject' => $tag->subject,
+                        'type' => 'category_based', // Mark as category-based
+                    ];
+                }
+            }
+        }
+
+        // 3. Get popular tags from all videos (fallback)
+        $popularTags = VideoTag::when($search, function($q) use ($search) {
+                $q->where('tag', 'like', '%' . $search . '%');
+            })
+            ->selectRaw('tag, subject, COUNT(*) as usage_count')
+            ->groupBy('tag', 'subject')
+            ->orderBy('usage_count', 'desc')
+            ->limit(10)
+            ->get();
+
+        foreach ($popularTags as $tag) {
+            // Avoid duplicates
+            $exists = collect($response)->contains(function($item) use ($tag) {
+                return $item['id'] === $tag->tag;
+            });
+            
+            if (!$exists) {
+                $response[] = [
+                    'id'   => $tag->tag,
+                    'text' => $tag->tag,
+                    'subject' => $tag->subject,
+                    'type' => 'popular', // Mark as popular tag
+                ];
+            }
+        }
+
+        // If search term provided and no results, return search-based suggestions
+        if ($search && empty($response)) {
+            $searchTags = VideoTag::where('tag', 'like', '%' . $search . '%')
+                ->selectRaw('tag, subject, COUNT(*) as usage_count')
+                ->groupBy('tag', 'subject')
+                ->orderBy('usage_count', 'desc')
+                ->limit(10)
+                ->get();
+
+            foreach ($searchTags as $tag) {
+                $response[] = [
+                    'id'   => $tag->tag,
+                    'text' => $tag->tag,
+                    'subject' => $tag->subject,
+                    'type' => 'search',
+                ];
+            }
+        }
+
+        return response()->json(array_values($response));
     }
 
     public function uploadLiveServer($id)

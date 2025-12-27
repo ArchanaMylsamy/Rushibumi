@@ -4,12 +4,12 @@
             class="video-item__thumb    @if ($video->showEligible() && !$video->audience) autoPlay @endif"
             href="{{ route('video.play', [$video->id, $video->slug]) }} @if (@$playlist) ?list={{ @$playlist->slug }}&index={{ $index + 1 }} @endif">
             @if ($video->showEligible())
-                <video class="video-player" controls playsinline
+                <video class="video-player" controls playsinline preload="none"
                     data-poster="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image) }}">
                 </video>
                 @include('Template::partials.video.video_loader')
             @else
-                <img src="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image) }}" alt="Video Thumb">
+                <img src="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image) }}" alt="Video Thumb" loading="lazy">
                 <span class="video-item__price"><span
                         class="text">@lang('Only')</span>{{ gs('cur_sym') }}{{ showAmount($video->price, currencyFormat: false) }}</span>
                 <div class="premium-icon">
@@ -21,15 +21,20 @@
                     </svg>
                 </div>
             @endif
+            @if($video->duration)
+                <span class="video-item__duration">{{ $video->duration }}</span>
+            @endif
         </a>
         <div class="video-item__content">
-            <a class="video-item__channel-author" href="{{ route('preview.channel', $video->user->slug) }}">
-                <img class="fit-image"
-                    src="{{ getImage(getFilePath('userProfile') . '/' . $video->user->image, isAvatar: true) }}"
-                    alt="image">
-            </a>
-            <a class="channel"
-                href="{{ route('preview.channel', $video->user->slug) }}">{{ __($video->user->channel_name) }}</a>
+            <div class="channel-info">
+                <a class="video-item__channel-author" href="{{ route('preview.channel', $video->user->slug) }}">
+                    <img class="fit-image"
+                        src="{{ getImage(getFilePath('userProfile') . '/' . $video->user->image, isAvatar: true) }}"
+                        alt="image" loading="lazy">
+                </a>
+                <a class="channel"
+                    href="{{ route('preview.channel', $video->user->slug) }}">{{ __($video->user->channel_name) }}</a>
+            </div>
             <h5 class="title">
                 <a
                     href="{{ route('video.play', [$video->id, $video->slug]) }}@if (@$playlist) ?list={{ @$playlist->slug }}&index={{ $index + 1 }} @endif ">{{ __($video->title) }}</a>
@@ -74,10 +79,56 @@
 
 
             function playersInitiate() {
-                const players = Plyr.setup('.video-player', {
-                    controls,
-                    ratio: '16:9',
-                    muted: true,
+                // Initialize players for visible videos using Intersection Observer
+                const videoPlayers = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+                
+                if (videoPlayers.length === 0) return;
+                
+                // First, initialize videos that are already visible
+                videoPlayers.forEach(videoEl => {
+                    const rect = videoEl.getBoundingClientRect();
+                    const isVisible = rect.top < window.innerHeight + 100 && rect.bottom > -100;
+                    
+                    if (isVisible && !videoEl.hasAttribute('data-plyr-initialized')) {
+                        try {
+                            const player = new Plyr(videoEl, {
+                                controls,
+                                ratio: '16:9',
+                                muted: true,
+                            });
+                            videoEl.setAttribute('data-plyr-initialized', 'true');
+                        } catch (e) {
+                            console.warn('Plyr initialization error:', e);
+                        }
+                    }
+                });
+                
+                // Then set up observer for videos not yet visible
+                const remainingVideos = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
+                if (remainingVideos.length === 0) return;
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !entry.target.hasAttribute('data-plyr-initialized')) {
+                            try {
+                                const player = new Plyr(entry.target, {
+                                    controls,
+                                    ratio: '16:9',
+                                    muted: true,
+                                });
+                                entry.target.setAttribute('data-plyr-initialized', 'true');
+                                observer.unobserve(entry.target);
+                            } catch (e) {
+                                console.warn('Plyr initialization error:', e);
+                            }
+                        }
+                    });
+                }, {
+                    rootMargin: '100px' // Start loading 100px before video enters viewport
+                });
+                
+                remainingVideos.forEach(player => {
+                    observer.observe(player);
                 });
             }
         </script>

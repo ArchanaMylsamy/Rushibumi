@@ -334,9 +334,13 @@ class SiteController extends Controller {
     }
 
     public function getVideos($isStockVideo = false, $id = null) {
-        $query = Video::published()->public()->withoutOnlyPlaylist()->latest()->with('user', 'videoFiles')->whereHas('user', function ($q) {
-            $q->active();
-        })->regular();
+        // Optimize: Select only needed columns and eager load relationships efficiently
+        $query = Video::published()->public()->withoutOnlyPlaylist()->latest()
+            ->with(['user:id,username,image,channel_name,slug,status', 'videoFiles:id,video_id,file_name,quality'])
+            ->select('videos.*') // Select all video columns but optimize relationships
+            ->whereHas('user', function ($q) {
+                $q->active();
+            })->regular();
 
         if ($isStockVideo) {
             $query->stock();
@@ -356,16 +360,19 @@ class SiteController extends Controller {
 
         $videos = $query->orderBy('id', 'desc')->paginate(getPaginate());
 
-        $videos->getCollection()->transform(function ($video) {
-            if (auth()->check()) {
-                $user                  = auth()->user();
-                $video->purchased_true = $user
-                    ->purchasedVideos()
-                    ->where('video_id', $video->id)
-                    ->exists();
-            } else {
-                $video->purchased_true = false;
-            }
+        // Optimize: Batch check purchased videos for all videos at once instead of per video
+        $purchasedVideoIds = [];
+        if (auth()->check()) {
+            $videoIds = $videos->pluck('id')->toArray();
+            $purchasedVideoIds = auth()->user()
+                ->purchasedVideos()
+                ->whereIn('video_id', $videoIds)
+                ->pluck('video_id')
+                ->toArray();
+        }
+
+        $videos->getCollection()->transform(function ($video) use ($purchasedVideoIds) {
+            $video->purchased_true = in_array($video->id, $purchasedVideoIds);
             return $video;
         });
 

@@ -23,7 +23,7 @@
         <button type="button" class="res-sidebar-open-btn me-3"><i class="las la-bars"></i></button>
         <form class="navbar-search">
             <input type="search" name="#0" class="navbar-search-field" id="searchInput" autocomplete="off"
-                placeholder="@lang('Search here...')">
+                ">
             <i class="las la-search"></i>
             <ul class="search-list"></ul>
         </form>
