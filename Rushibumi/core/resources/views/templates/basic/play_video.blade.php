@@ -124,15 +124,6 @@
                                 <span class="text">@lang('Share')</span>
                             </button>
 
-                            @if ($video->stock_video == Status::NO)
-                                <button class="meta-buttons__button embed">
-                                    <span class="icon"><svg width="18" height="18" viewBox="0 0 16 16">
-                                            <path fill="none" stroke="currentColor" stroke-linecap="round"
-                                                stroke-linejoin="round" d="m10.67 12 4-4-4-4M5.33 4l-4 4 4 4"></path>
-                                        </svg></span>
-                                    <span class="text">@lang('Embed')</span>
-                                </button>
-                            @endif
 
                             @auth
                                 <button class="meta-buttons__button watchLater">
@@ -463,6 +454,31 @@
 
 @push('style')
    <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/play-video.css') }}">
+   <style>
+       /* Embed share item styling */
+       .custom--modal .modal-body .share-item.embed {
+           background: #6c757d;
+       }
+       
+       .custom--modal .modal-body .share-item.embed:hover {
+           background: #5a6268;
+       }
+       
+       .embed-code-section {
+           animation: slideDown 0.3s ease-out;
+       }
+       
+       @keyframes slideDown {
+           from {
+               opacity: 0;
+               transform: translateY(-10px);
+           }
+           to {
+               opacity: 1;
+               transform: translateY(0);
+           }
+       }
+   </style>
 @endpush
 
 @push('style-lib')
@@ -1228,10 +1244,47 @@
             });
             // end comment
 
-            //embed
-
-            $('.embed').on('click', function() {
-                $('#embedModal').modal('show');
+            // Handle embed option in share modal
+            $(document).on('click', '.share-item.embed', function(e) {
+                e.preventDefault();
+                const embedCode = $(this).data('embed-code');
+                const embedSection = $('.embed-code-section');
+                const embedTextarea = $('.embedText');
+                
+                // Set embed code value
+                embedTextarea.val(embedCode);
+                embedSection.slideDown();
+                
+                // Scroll to embed section
+                $('html, body').animate({
+                    scrollTop: embedSection.offset().top - 100
+                }, 300);
+            });
+            
+            // Handle copy embed code button
+            $(document).on('click', '.copyEmbedBtn', function() {
+                const embedTextarea = $('.embedText');
+                embedTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    embedTextarea.blur();
+                    notify('success', 'Embed code copied successfully');
+                } catch (err) {
+                    // Fallback for modern browsers
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(embedTextarea.val()).then(function() {
+                            notify('success', 'Embed code copied successfully');
+                        });
+                    } else {
+                        alert('Please press Ctrl/Cmd + C to copy');
+                    }
+                }
+            });
+            
+            // Reset embed section when share modal is closed
+            $('#shareModal').on('hidden.bs.modal', function() {
+                $('.embed-code-section').slideUp();
+                $('.copyText').val('{{ route('video.play', [$video->id, $video->slug]) }}');
             });
             $('.saveBtn').on('click', function() {
                 const modal = $('#addVideoModal');

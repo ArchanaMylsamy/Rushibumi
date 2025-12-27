@@ -1,24 +1,3 @@
-{{-- embed modal --}}
-<div class="custom--modal fade scale-style modal" id="embedModal" aria-labelledby="exampleModalLabel" aria-hidden="true"
-    tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@lang('Embeded Link')</h5>
-                <button class="btn-close" data-bs-dismiss="modal" type="button" aria-label="Close">
-                    <i class="las la-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="share-embed">
-                    <textarea class="form--control copyText"><iframe src="{{ route('embed', [$video->id, $video->slug]) }}" width="560" height="315" frameborder="0" allowfullscreen></iframe></textarea>
-                    <button class="share-embed-btn copyBtn">@lang('Copy')</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- share modal --}}
 
 <div class="custom--modal fade scale-style modal" id="shareModal" aria-labelledby="exampleModalLabel" aria-hidden="true"
@@ -53,11 +32,21 @@
                         href="mailto:?subject={{ $video->title }}&body={{ route('video.play', [$video->id, $video->slug]) }}">
                         <i class="las la-envelope"></i>
                     </a>
+                    @if ($video->stock_video == \App\Constants\Status::NO)
+                        <a class="share-item embed" href="javascript:void(0)" data-embed-code="{{ htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>') }}">
+                            <i class="las la-code"></i>
+                        </a>
+                    @endif
                 </div>
                 <div class="share-embed">
                     <input class="form--control copyText" type="text"
                         value="{{ route('video.play', [$video->id, $video->slug]) }}">
                     <button class="share-embed-btn copyBtn">@lang('Copy')</button>
+                </div>
+                <div class="share-embed embed-code-section" style="display: none; margin-top: 15px;">
+                    <label class="form--label mb-2">@lang('Embed Code')</label>
+                    <textarea class="form--control copyText embedText" rows="3" readonly></textarea>
+                    <button class="share-embed-btn copyBtn copyEmbedBtn" style="margin-top: 10px;">@lang('Copy Embed Code')</button>
                 </div>
             </div>
         </div>

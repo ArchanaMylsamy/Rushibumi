@@ -37,19 +37,7 @@ class SiteController extends Controller {
         $shortVideos = (clone $baseVideos)->shorts()->take(15)->get();
         $videos      = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->paginate(getPaginate());
 
-        $trendingVideosQuery = (clone $baseVideos)->where('is_shorts_video', Status::NO)->where(function ($query) {
-            $query->whereDate('created_at', '>=', now()->subDays(7))->orWhere('is_trending', Status::YES);
-        })->orderByDesc('views')->limit(10);
-
-        $trendingVideos     = $trendingVideosQuery->get();
-        $trendingVideoCount = $trendingVideos->count();
-
-        if ($trendingVideoCount < 10) {
-            $remainingCount   = 10 - $trendingVideoCount;
-            $additionalVideos = (clone $baseVideos)->where('is_shorts_video', Status::NO)->whereNotIn('id', @$trendingVideos->pluck('id') ?? [])->whereDate('created_at', '<', now()->subDays(7))->limit($remainingCount)->orderByDesc('views')->get();
-            $trendingVideos   = $trendingVideos->merge($additionalVideos);
-        }
-        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'trendingVideos', 'shortVideos'));
+        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos'));
     }
 
     public function search(Request $request) {

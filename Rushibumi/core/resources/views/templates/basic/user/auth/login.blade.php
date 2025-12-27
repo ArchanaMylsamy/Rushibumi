@@ -22,12 +22,12 @@
                             <div class="form-group">
                                 <label class="form--label">@lang('Username or Email')</label>
                                 <input type="text" name="username" value="{{ old('username') }}"
-                                       class="form-control form--control" required>
+                                       class="form-control form--control" autocomplete="username" required>
                             </div>
 
                             <div class="form-group">
                                 <label class="form--label ">@lang('Password')</label>
-                                <input type="password" class="form-control form--control" name="password" required>
+                                <input type="password" class="form-control form--control" name="password" autocomplete="current-password" required>
                             </div>
 
                             @php
@@ -222,23 +222,130 @@
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* Enhanced Input Fields */
-        .form--control {
+        /* Enhanced Input Fields - AGGRESSIVE: Remove ALL white backgrounds - MAXIMUM SPECIFICITY */
+        .account-section .account-form .account-form__body .form-group .form--control,
+        .account-section .account-form .account-form__body .form-group input[type="text"],
+        .account-section .account-form .account-form__body .form-group input[type="password"],
+        .account-section .account-form .account-form__body .form-group .form-control,
+        .form--control,
+        .account-form input[type="text"],
+        .account-form input[type="password"],
+        .account-form .form-control {
             background: rgba(0, 0, 0, 0.6) !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            background-image: none !important;
             border: 2px solid rgba(220, 20, 60, 0.3) !important;
             color: #ffffff !important;
             border-radius: 8px !important;
             padding: 12px 16px !important;
             transition: all 0.3s ease !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
         }
 
-        .form--control:focus {
+        /* AGGRESSIVE: Remove white background on focus/click - ALL states - MAXIMUM SPECIFICITY */
+        .account-section .account-form .account-form__body .form-group .form--control:focus,
+        .account-section .account-form .account-form__body .form-group .form--control:active,
+        .account-section .account-form .account-form__body .form-group .form--control:focus-visible,
+        .account-section .account-form .account-form__body .form-group .form--control:focus-within,
+        .account-section .account-form .account-form__body .form-group input[type="text"]:focus,
+        .account-section .account-form .account-form__body .form-group input[type="text"]:active,
+        .account-section .account-form .account-form__body .form-group input[type="text"]:focus-visible,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:focus,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:active,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:focus-visible,
+        .account-section .account-form .account-form__body .form-group .form-control:focus,
+        .account-section .account-form .account-form__body .form-group .form-control:active,
+        .account-section .account-form .account-form__body .form-group .form-control:focus-visible,
+        .account-section .account-form .account-form__body .form-group .form-control:focus-within,
+        .form--control:focus,
+        .form--control:active,
+        .form--control:focus-visible,
+        .form--control:focus-within,
+        .account-form input[type="text"]:focus,
+        .account-form input[type="text"]:active,
+        .account-form input[type="text"]:focus-visible,
+        .account-form input[type="password"]:focus,
+        .account-form input[type="password"]:active,
+        .account-form input[type="password"]:focus-visible,
+        .account-form .form-control:focus,
+        .account-form .form-control:active,
+        .account-form .form-control:focus-visible,
+        .account-form .form-control:focus-within {
             background: rgba(0, 0, 0, 0.8) !important;
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            background-image: none !important;
             border-color: #dc143c !important;
+            color: #ffffff !important;
             box-shadow: 
                 0 0 0 3px rgba(220, 20, 60, 0.2),
                 0 0 20px rgba(220, 20, 60, 0.3) !important;
             outline: none !important;
+        }
+
+        /* Remove white background on hover */
+        .form--control:hover,
+        .account-form input[type="text"]:hover,
+        .account-form input[type="password"]:hover,
+        .account-form .form-control:hover {
+            background: rgba(0, 0, 0, 0.7) !important;
+            background-color: rgba(0, 0, 0, 0.7) !important;
+            background-image: none !important;
+        }
+
+        /* Style browser autofill to match dark theme - MAXIMUM SPECIFICITY */
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill,
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill:hover,
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill:focus,
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill:active,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill:hover,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill:focus,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill:active,
+        .account-form input:-webkit-autofill,
+        .account-form input:-webkit-autofill:hover,
+        .account-form input:-webkit-autofill:focus,
+        .account-form input:-webkit-autofill:active,
+        .form--control:-webkit-autofill,
+        .form--control:-webkit-autofill:hover,
+        .form--control:-webkit-autofill:focus,
+        .form--control:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            color: #ffffff !important;
+            transition: background-color 5000s ease-in-out 0s !important;
+        }
+
+        /* Override browser default autocomplete styling - MAXIMUM SPECIFICITY */
+        .account-section .account-form .account-form__body .form-group input[type="text"]:-webkit-autofill,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:-webkit-autofill,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill,
+        .account-form input[type="text"]:-webkit-autofill,
+        .account-form input[type="password"]:-webkit-autofill,
+        .form--control:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6) inset !important;
+            -webkit-text-fill-color: #ffffff !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* When autofilled input is focused/clicked */
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill:focus,
+        .account-section .account-form .account-form__body .form-group input:-webkit-autofill:active,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill:focus,
+        .account-section .account-form .account-form__body .form-group .form--control:-webkit-autofill:active,
+        .account-form input:-webkit-autofill:focus,
+        .account-form input:-webkit-autofill:active,
+        .form--control:-webkit-autofill:focus,
+        .form--control:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.8) inset !important;
+            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.8) inset !important;
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            background: rgba(0, 0, 0, 0.8) !important;
         }
 
         .form--control::placeholder {
@@ -488,6 +595,240 @@
         [data-theme="light"] .account-form__text {
             color: rgba(0, 0, 0, 0.6);
         }
+
+        /* Force dark background on ALL possible states - maximum specificity */
+        .account-section .account-form .account-form__body .form-group .form--control,
+        .account-section .account-form .account-form__body .form-group input[type="text"],
+        .account-section .account-form .account-form__body .form-group input[type="password"] {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            background-image: none !important;
+        }
+
+        .account-section .account-form .account-form__body .form-group .form--control:focus,
+        .account-section .account-form .account-form__body .form-group .form--control:active,
+        .account-section .account-form .account-form__body .form-group input[type="text"]:focus,
+        .account-section .account-form .account-form__body .form-group input[type="text"]:active,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:focus,
+        .account-section .account-form .account-form__body .form-group input[type="password"]:active {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            background-image: none !important;
+        }
+
+        /* Ensure no white/transparent backgrounds */
+        .account-form .form-group {
+            background-color: transparent !important;
+            background: transparent !important;
+        }
+
+        /* Remove any Bootstrap/Browser default white backgrounds */
+        .account-form input[type="text"]:not(:-webkit-autofill),
+        .account-form input[type="password"]:not(:-webkit-autofill),
+        .account-form .form-control:not(:-webkit-autofill) {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Force dark on all enabled states */
+        .account-form input[type="text"]:enabled,
+        .account-form input[type="password"]:enabled {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Text selection styling */
+        .account-form input[type="text"]::selection,
+        .account-form input[type="password"]::selection {
+            background-color: rgba(220, 20, 60, 0.5) !important;
+            color: #fff !important;
+        }
+
+        /* Caret color */
+        .account-form input[type="text"],
+        .account-form input[type="password"] {
+            caret-color: #dc143c !important;
+        }
     </style>
+    @endpush
+
+    @push('script')
+    <script>
+        (function() {
+            'use strict';
+            
+            function forceDarkBackground(input) {
+                if (input) {
+                    input.style.setProperty('background-color', 'rgba(0, 0, 0, 0.6)', 'important');
+                    input.style.setProperty('background', 'rgba(0, 0, 0, 0.6)', 'important');
+                    input.style.setProperty('color', '#ffffff', 'important');
+                    input.style.setProperty('background-image', 'none', 'important');
+                    // Also set via setAttribute to override any CSS
+                    input.setAttribute('style', input.getAttribute('style') + '; background-color: rgba(0, 0, 0, 0.6) !important; background: rgba(0, 0, 0, 0.6) !important;');
+                }
+            }
+            
+            function forceDarkBackgroundOnFocus(input) {
+                if (input) {
+                    input.style.setProperty('background-color', 'rgba(0, 0, 0, 0.8)', 'important');
+                    input.style.setProperty('background', 'rgba(0, 0, 0, 0.8)', 'important');
+                    input.style.setProperty('color', '#ffffff', 'important');
+                    input.style.setProperty('background-image', 'none', 'important');
+                    // Also set via setAttribute to override any CSS
+                    input.setAttribute('style', input.getAttribute('style') + '; background-color: rgba(0, 0, 0, 0.8) !important; background: rgba(0, 0, 0, 0.8) !important;');
+                }
+            }
+            
+            // Check if input is autofilled
+            function isAutofilled(input) {
+                return input.matches(':-webkit-autofill') || 
+                       window.getComputedStyle(input).backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+                       (input.value && input.value.length > 0);
+            }
+            
+            // Force dark background immediately on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                const inputs = document.querySelectorAll('.account-form input[type="text"], .account-form input[type="password"], .account-form .form--control, .account-form .form-control');
+                
+                inputs.forEach(function(input) {
+                    forceDarkBackground(input);
+                    
+                    // Special handling for autofilled inputs
+                    function handleAutofill() {
+                        if (isAutofilled(input)) {
+                            // Force dark background immediately for autofilled inputs
+                            input.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                            input.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                            input.style.setProperty('-webkit-text-fill-color', '#ffffff', 'important');
+                            forceDarkBackground(input);
+                        }
+                    }
+                    
+                    // Check for autofill immediately
+                    setTimeout(handleAutofill, 100);
+                    setTimeout(handleAutofill, 300);
+                    setTimeout(handleAutofill, 500);
+                    
+                    // Force dark background on focus
+                    input.addEventListener('focus', function(e) {
+                        e.preventDefault();
+                        forceDarkBackgroundOnFocus(this);
+                        // Special handling for autofilled
+                        if (isAutofilled(this)) {
+                            this.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                            this.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                        }
+                    }, true);
+                    
+                    // Force dark background on click
+                    input.addEventListener('click', function(e) {
+                        forceDarkBackgroundOnFocus(this);
+                        // Special handling for autofilled
+                        if (isAutofilled(this)) {
+                            this.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                            this.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                        }
+                    }, true);
+                    
+                    input.addEventListener('mousedown', function(e) {
+                        forceDarkBackgroundOnFocus(this);
+                        // Special handling for autofilled
+                        if (isAutofilled(this)) {
+                            this.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                            this.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                        }
+                    }, true);
+                    
+                    // Force dark background on blur
+                    input.addEventListener('blur', function() {
+                        forceDarkBackground(this);
+                        // Special handling for autofilled
+                        if (isAutofilled(this)) {
+                            this.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                            this.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                        }
+                    }, true);
+                    
+                    // Watch for autofill animation/transition events
+                    input.addEventListener('animationstart', handleAutofill, true);
+                    input.addEventListener('transitionstart', handleAutofill, true);
+                    
+                    // Monitor for any style changes and force dark background
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.type === 'attributes') {
+                                const computedStyle = window.getComputedStyle(input);
+                                const computedBg = computedStyle.backgroundColor;
+                                
+                                // Check for white, transparent, or rgba(0,0,0,0) backgrounds
+                                if (computedBg && (
+                                    computedBg.includes('white') || 
+                                    computedBg.includes('#fff') || 
+                                    computedBg.includes('rgb(255, 255, 255)') || 
+                                    computedBg === 'transparent' || 
+                                    computedBg === 'rgba(0, 0, 0, 0)' ||
+                                    computedBg.includes('rgba(0, 0, 0, 0)')
+                                )) {
+                                    if (document.activeElement === input) {
+                                        forceDarkBackgroundOnFocus(input);
+                                    } else {
+                                        forceDarkBackground(input);
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    
+                    observer.observe(input, {
+                        attributes: true,
+                        attributeFilter: ['style', 'class']
+                    });
+                    
+                    // Also check periodically for white/transparent backgrounds - more frequent
+                    setInterval(function() {
+                        const computedStyle = window.getComputedStyle(input);
+                        const bgColor = computedStyle.backgroundColor;
+                        const isFocused = document.activeElement === input;
+                        
+                        // Check for autofill
+                        if (isAutofilled(input)) {
+                            if (isFocused) {
+                                input.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                                input.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.8) inset', 'important');
+                                forceDarkBackgroundOnFocus(input);
+                            } else {
+                                input.style.setProperty('-webkit-box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                                input.style.setProperty('box-shadow', '0 0 0 1000px rgba(0, 0, 0, 0.6) inset', 'important');
+                                forceDarkBackground(input);
+                            }
+                        }
+                        
+                        if (bgColor && (
+                            bgColor.includes('white') || 
+                            bgColor.includes('rgb(255, 255, 255)') || 
+                            bgColor === 'transparent' || 
+                            bgColor === 'rgba(0, 0, 0, 0)' ||
+                            bgColor.includes('rgba(0, 0, 0, 0)')
+                        )) {
+                            if (isFocused) {
+                                forceDarkBackgroundOnFocus(input);
+                            } else {
+                                forceDarkBackground(input);
+                            }
+                        }
+                    }, 30); // Check every 30ms for faster response, especially for autofill
+                });
+            });
+            
+            // Also force on window load
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const inputs = document.querySelectorAll('.account-form input[type="text"], .account-form input[type="password"], .account-form .form--control, .account-form .form-control');
+                    inputs.forEach(function(input) {
+                        forceDarkBackground(input);
+                    });
+                }, 100);
+            });
+        })();
+    </script>
     @endpush
 @endsection

@@ -84,6 +84,12 @@
                                             <div class="button--group">
                                                 <a href="{{ route('admin.videos.edit', @$video->id) }}" class="btn btn-outline--primary btn-sm"><i class="la la-pencil"></i>@lang('Edit')</a>
                                                 <a href="@if ($video->status != Status::YES) javascript:void(0) @else{{ route('admin.videos.analytics', @$video->id) }} @endif" class="btn btn-outline--info btn-sm @if ($video->status != Status::YES) disabled @endif"><i class="las la-chart-pie"></i>@lang('Analytics')</a>
+                                                <a href="javascript:void(0)" 
+                                                   class="btn btn-outline--danger btn-sm confirmationBtn" 
+                                                   data-action="{{ route('admin.videos.delete', $video->id) }}"
+                                                   data-question="@lang('Are you sure you want to delete this video? This action cannot be undone and will delete all associated files.')">
+                                                    <i class="la la-trash"></i>@lang('Delete')
+                                                </a>
                                             </div>
                                         </td>
 
@@ -113,7 +119,7 @@
     </div>
 @endsection
 
-
+<x-confirmation-modal />
 
 @push('breadcrumb-plugins')
     <x-search-form placeholder="Username/Title/Channel Name " />

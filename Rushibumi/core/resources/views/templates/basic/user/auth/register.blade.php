@@ -474,6 +474,67 @@
             color: rgba(255, 255, 255, 0.4);
         }
 
+        /* Fix Select Dropdown - Remove Multiple Arrows and Show Single Arrow */
+        /* Remove default browser arrow completely */
+        select.form--control,
+        select.form-control {
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            background-image: none !important;
+            padding-right: 40px !important; /* Space for custom arrow */
+            cursor: pointer !important;
+        }
+
+        /* Remove IE/Edge default arrow */
+        select.form--control::-ms-expand,
+        select.form-control::-ms-expand {
+            display: none !important;
+        }
+
+        /* Remove any pseudo-element arrows that might be added */
+        select.form--control::before,
+        select.form--control::after,
+        select.form-control::before,
+        select.form-control::after {
+            display: none !important;
+            content: none !important;
+        }
+
+        /* Remove arrows from parent elements */
+        .form-group::before,
+        .form-group::after,
+        .account-form__body .form-group::before,
+        .account-form__body .form-group::after {
+            display: none !important;
+        }
+
+        /* Add single custom arrow using background-image */
+        select.form--control,
+        select.form-control {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23dc143c' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 12px 12px !important;
+        }
+
+        /* Ensure select dropdown options are styled */
+        select.form--control option,
+        select.form-control option {
+            background: rgba(0, 0, 0, 0.9) !important;
+            color: #ffffff !important;
+            padding: 10px !important;
+        }
+
+        /* Focus state for select */
+        select.form--control:focus,
+        select.form-control:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff1744' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 12px center !important;
+            background-size: 12px 12px !important;
+        }
+
         .form--label {
             color: rgba(255, 255, 255, 0.9) !important;
             font-weight: 500;

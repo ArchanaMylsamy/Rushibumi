@@ -131,6 +131,7 @@ Route::middleware('admin')->group(function () {
 
             Route::get('edit/{id}', 'edit')->name('edit');
             Route::post('update/{id}', 'update')->name('update');
+            Route::post('delete/{id}', 'delete')->name('delete');
             Route::get('check-slug', 'checkSlug')->name('check.slug');
 
             Route::get('analytics/{id?}', 'analytics')->name('analytics');

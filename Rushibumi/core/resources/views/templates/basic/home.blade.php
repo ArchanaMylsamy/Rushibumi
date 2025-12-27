@@ -15,16 +15,6 @@
             </div>
         </div>
 
-        @if (!blank($trendingVideos))
-            <x-home-body-title icon="vti-top" title="Trending" />
-
-            <section class="trending-section">
-                <div class="video-item-wrapper">
-                    @include($activeTemplate . 'partials.video.video_list', ['videos' => $trendingVideos])
-                </div>
-            </section>
-        @endif
-
         @if (!blank($shortVideos))
             <x-home-body-title icon="vti-short" title="Shorts" />
             <section class="shorts-section">
@@ -51,7 +41,7 @@
             </div>
         @endif
 
-        @if (blank($trendingVideos) && blank($shortVideos) && blank($videos))
+        @if (blank($shortVideos) && blank($videos))
             <div class="empty-container">
                 @include('Template::partials.empty')
             </div>
