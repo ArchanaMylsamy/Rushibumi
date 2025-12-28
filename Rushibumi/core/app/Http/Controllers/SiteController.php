@@ -143,18 +143,8 @@ class SiteController extends Controller {
         $playlists     = [];
         $plan          = [];
         $planPlaylists = [];
-        if ($video->stock_video) {
-            $purchasedTrue = false;
-        }
         if (auth()->check()) {
             $user = auth()->user();
-            if ($video->stock_video) {
-
-                if ($video->user_id == $user->id || in_array($video->id, $user->purchasedVideoId)) {
-
-                    $purchasedTrue = true;
-                }
-            }
             $watchLater    = in_array($video->id, $user->watchLatterVideoId);
             $existsHistory = collect($user->watchHistories)->where('video_id', $video->id)->first();
             if ($existsHistory) {
@@ -321,7 +311,7 @@ class SiteController extends Controller {
         return view('Template::maintenance', compact('pageTitle', 'maintenance'));
     }
 
-    public function getVideos($isStockVideo = false, $id = null) {
+    public function getVideos($id = null) {
         // Optimize: Select only needed columns and eager load relationships efficiently
         $query = Video::published()->public()->withoutOnlyPlaylist()->latest()
             ->with(['user:id,username,image,channel_name,slug,status', 'videoFiles:id,video_id,file_name,quality'])
@@ -329,10 +319,6 @@ class SiteController extends Controller {
             ->whereHas('user', function ($q) {
                 $q->active();
             })->regular();
-
-        if ($isStockVideo) {
-            $query->stock();
-        }
 
         if (request()->trending) {
             $query->whereDate('created_at', '>=', now()->subDays(7))->orWhere('is_trending', Status::YES);
@@ -418,17 +404,6 @@ class SiteController extends Controller {
         return $this->getVideos(false, $id);
     }
 
-    public function getStockVideos() {
-        return $this->getVideos(true);
-    }
-
-    public function stockVideos() {
-        $pageTitle = 'Stock Videos';
-        $videos    = Video::published()->withoutOnlyPlaylist()->public()->where('is_shorts_video', Status::NO)->stock()->whereHas('user', function ($query) {
-            $query->active();
-        })->with('videoFiles')->latest()->paginate(getPaginate());
-        return view('Template::stock_videos', compact('videos', 'pageTitle'));
-    }
 
     public function categoryVideo($slug) {
         if ($slug == 'all') {

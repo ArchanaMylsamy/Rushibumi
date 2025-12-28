@@ -38,7 +38,6 @@ class VideoController extends Controller
     {
         $request->validate([
             'audience'        => 'required|in:0,1',
-            'price'           => 'required_with:stock_video',
             'caption.*'       => [
                 'sometimes',
                 function ($value, $fail) use ($request) {
@@ -93,14 +92,6 @@ class VideoController extends Controller
             $old->delete();
         });
 
-        $video->audience = $request->audience;
-        if ($request->stock_video) {
-            $video->stock_video = Status::YES;
-            $video->price       = $request->price;
-        } else {
-            $video->stock_video = Status::NO;
-            $video->price       = 0;
-        }
         $video->audience = $request->audience;
 
         if ($video->status == Status::NO || $video->step < Status::THIRD_STEP) {
@@ -179,7 +170,13 @@ class VideoController extends Controller
     {
         try {
             $id = decrypt($id);
-            $video = Video::authUser()->with('videoFiles', 'subtitles', 'tags', 'storage')->findOrFail($id);
+            $video = Video::authUser()->with('videoFiles', 'subtitles', 'tags', 'storage')->find($id);
+            
+            // Check if video exists
+            if (!$video) {
+                $notify[] = ['error', 'Video not found or you do not have permission to delete this video'];
+                return back()->withNotify($notify);
+            }
             
             // Double check: Ensure video belongs to current user
             if ($video->user_id != auth()->id()) {

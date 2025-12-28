@@ -17,7 +17,7 @@ class User extends Authenticatable {
      * @var array
      */
     protected $fillable = [
-        'firstname', 'lastname', 'surname', 'middle_name', 'family_name', 'display_name',
+        'firstname', 'lastname', 'display_name',
         'username', 'email', 'password', 'mobile', 'phone_number', 'government_id', 
         'government_id_type', 'country_name', 'country_code', 'city', 'state', 'zip', 'address'
     ];
@@ -140,13 +140,13 @@ class User extends Authenticatable {
 
     public function fullname(): Attribute {
         return new Attribute(
-            get: fn() => trim($this->firstname . ' ' . $this->middle_name . ' ' . $this->lastname),
+            get: fn() => trim($this->firstname . ' ' . $this->lastname),
         );
     }
 
     public function completeName(): Attribute {
         return new Attribute(
-            get: fn() => trim($this->surname . ' ' . $this->firstname . ' ' . $this->middle_name . ' ' . $this->family_name),
+            get: fn() => trim($this->firstname . ' ' . $this->lastname),
         );
     }
 

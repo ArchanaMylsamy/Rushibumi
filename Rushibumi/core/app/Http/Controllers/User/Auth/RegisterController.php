@@ -49,10 +49,7 @@ class RegisterController extends Controller
 
         $validate = Validator::make($data, [
             // Name fields
-            'surname' => 'required|string|max:40',
             'firstname' => 'required|string|max:40',
-            'middle_name' => 'nullable|string|max:40',
-            'family_name' => 'nullable|string|max:40',
             'lastname' => 'required|string|max:40',
             'display_name' => 'required|string|max:100|unique:users',
             
@@ -71,7 +68,6 @@ class RegisterController extends Controller
             'captcha' => 'sometimes|required',
             'agree' => $agree
         ], [
-            'surname.required' => 'The surname field is required',
             'firstname.required' => 'The first name field is required',
             'lastname.required' => 'The last name field is required',
             'display_name.required' => 'The display name field is required',
@@ -125,10 +121,7 @@ class RegisterController extends Controller
         $user->password = Hash::make($data['password']);
         
         // Name fields
-        $user->surname = $data['surname'];
         $user->firstname = $data['firstname'];
-        $user->middle_name = $data['middle_name'] ?? null;
-        $user->family_name = $data['family_name'] ?? null;
         $user->lastname = $data['lastname'];
         $user->display_name = $data['display_name'];
         

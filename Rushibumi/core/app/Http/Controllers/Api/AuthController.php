@@ -33,10 +33,7 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             // Name fields
-            'surname' => 'required|string|max:40',
             'firstname' => 'required|string|max:40',
-            'middle_name' => 'nullable|string|max:40',
-            'family_name' => 'nullable|string|max:40',
             'lastname' => 'required|string|max:40',
             'display_name' => 'required|string|max:100|unique:users',
             
@@ -72,10 +69,7 @@ class AuthController extends Controller
         $user->password = Hash::make($request->password);
         
         // Name fields
-        $user->surname = $request->surname;
         $user->firstname = $request->firstname;
-        $user->middle_name = $request->middle_name ?? null;
-        $user->family_name = $request->family_name ?? null;
         $user->lastname = $request->lastname;
         $user->display_name = $request->display_name;
         

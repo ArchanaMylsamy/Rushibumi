@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('video_tags', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('video_id');
-            $table->string('tag');
-            $table->timestamps();
-            
-            $table->foreign('video_id')->references('id')->on('videos')->onDelete('cascade');
-            $table->index('tag');
-            $table->index('video_id');
-        });
+        if (!Schema::hasTable('video_tags')) {
+            Schema::create('video_tags', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('video_id');
+                $table->string('tag');
+                $table->timestamps();
+                
+                $table->foreign('video_id')->references('id')->on('videos')->onDelete('cascade');
+                $table->index('tag');
+                $table->index('video_id');
+            });
+        }
     }
 
     /**

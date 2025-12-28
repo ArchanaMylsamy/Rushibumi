@@ -42,11 +42,6 @@ class UserController extends Controller {
         return view('Template::user.video.list', compact('pageTitle', 'videos'));
     }
 
-    public function stockVideos() {
-        $pageTitle = 'Stock Videos';
-        $videos    = $this->videoData('stock');
-        return view('Template::user.video.list', compact('pageTitle', 'videos'));
-    }
 
     public function freeVideos() {
         $pageTitle = 'Free Videos';
@@ -360,10 +355,9 @@ class UserController extends Controller {
         $pageTitle = 'Earnings';
         $user      = auth()->user();
 
-        $totalEarnings      = $user->transactions()->whereIn('remark', ['ads_revenue', 'earn_from_video'])->sum('amount');
-        $stockVideoEarnings = $user->transactions()->where('remark', 'earn_from_video')->sum('amount');
+        $totalEarnings      = $user->transactions()->where('remark', 'ads_revenue')->sum('amount');
         $adsEarnings        = $user->transactions()->where('remark', 'ads_revenue')->sum('amount');
-        $earnings           = Transaction::where('user_id', auth()->id())->with('user')->whereIn('remark', ['ads_revenue', 'earn_from_video'])
+        $earnings           = Transaction::where('user_id', auth()->id())->with('user')->where('remark', 'ads_revenue')
             ->take(5)
             ->latest()
             ->get();
@@ -371,10 +365,10 @@ class UserController extends Controller {
         $playlistEarnings        = $user->transactions()->where('remark', 'earn_from_playlist')->sum('amount');
         $planEarnings            = $user->transactions()->where('remark', 'earn_from_plan')->sum('amount');
         $adminCommission         = $user->transactions()
-            ->whereIn('remark', ['video_sell_charge', 'playlist_sell_charge', 'plan_sell_charge'])
+            ->whereIn('remark', ['playlist_sell_charge', 'plan_sell_charge'])
             ->sum('amount');
 
-        return view('Template::user.earning_history', compact('pageTitle', 'playlistEarnings', 'planEarnings', 'adminCommission', 'totalEarnings', 'stockVideoEarnings', 'earnings', 'adsEarnings'));
+        return view('Template::user.earning_history', compact('pageTitle', 'playlistEarnings', 'planEarnings', 'adminCommission', 'totalEarnings', 'earnings', 'adsEarnings'));
     }
 
     public function wallet() {
@@ -405,22 +399,12 @@ class UserController extends Controller {
             ->selectRaw('SUM(amount) AS amount')
             ->selectRaw("DATE_FORMAT(created_at, '{$format}') as created_on")
             ->where('user_id', auth()->id())
-            ->whereIn('remark', ['ads_revenue', 'earn_from_video', 'earn_from_plan', 'earn_from_playlist'])
+            ->whereIn('remark', ['ads_revenue', 'earn_from_plan', 'earn_from_playlist'])
             ->groupBy('created_on')
             ->latest()
             ->get();
 
         $adsEarnings = Transaction::where('remark', 'ads_revenue')
-            ->whereDate('created_at', '>=', $request->start_date)
-            ->whereDate('created_at', '<=', $request->end_date)
-            ->selectRaw('SUM(amount) AS amount')
-            ->selectRaw("DATE_FORMAT(created_at, '{$format}') as created_on")
-            ->where('user_id', auth()->id())
-            ->groupBy('created_on')
-            ->latest()
-            ->get();
-
-        $stockVideoEarnings = Transaction::where('remark', 'earn_from_video')
             ->whereDate('created_at', '>=', $request->start_date)
             ->whereDate('created_at', '<=', $request->end_date)
             ->selectRaw('SUM(amount) AS amount')
@@ -456,7 +440,6 @@ class UserController extends Controller {
             $data[] = [
                 'created_on'          => showDateTime($date, 'd-M-y'),
                 'total_earning'       => getAmount($totalEarnings->where('created_on', $date)->first()?->amount ?? 0),
-                'stock_video_earning' => getAmount($stockVideoEarnings->where('created_on', $date)->first()?->amount ?? 0),
                 'ads_earnings'        => getAmount($adsEarnings->where('created_on', $date)->first()?->amount ?? 0),
                 'playlist_earnings'   => getAmount($playlistEarnings->where('created_on', $date)->first()?->amount ?? 0),
                 'plan_earnings'       => getAmount($planEarnings->where('created_on', $date)->first()?->amount ?? 0),
@@ -471,10 +454,6 @@ class UserController extends Controller {
             [
                 'name' => 'Total Earnings',
                 'data' => $data->pluck('total_earning'),
-            ],
-            [
-                'name' => 'Earnings From Stock Video',
-                'data' => $data->pluck('stock_video_earning'),
             ],
             [
                 'name' => 'Earnings From ads',

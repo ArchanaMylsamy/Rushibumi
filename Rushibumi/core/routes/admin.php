@@ -123,7 +123,6 @@ Route::middleware('admin')->group(function () {
             Route::get('draft', 'draft')->name('draft');
             Route::get('rejected', 'rejected')->name('rejected');
 
-            Route::get('stock/{user_id?}', 'stock')->name('stock');
             Route::get('free/{user_id?}', 'free')->name('free');
 
             Route::get('public/{user_id?}', 'public')->name('public');

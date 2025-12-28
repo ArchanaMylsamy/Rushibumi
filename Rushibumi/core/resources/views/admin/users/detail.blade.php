@@ -61,10 +61,6 @@
                               icon="las la-video-slash" value="{{ $widget['totalPrivateVideos'] }}" bg="8" type="2" />
                 </div>
 
-                <div class="col-xxl-3 col-sm-6">
-                    <x-widget style="6" outline="true" link="{{ route('admin.videos.stock', $user->id) }}" title="Stock Videos"
-                              icon="la la-hand-holding-usd" value="{{ $widget['totalStockVideos'] }}" bg="6" type="2" />
-                </div>
 
                 <div class="col-xxl-3 col-sm-6">
                     <x-widget style="6" outline="true" link="{{ route('admin.videos.free', $user->id) }}" title="Free Videos"
@@ -164,33 +160,9 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label>@lang('Surname')</label>
-                                            <input class="form-control" type="text" name="surname"
-                                                   value="{{ $user->surname }}">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-group">
                                             <label>@lang('First Name') <span class="text-danger">*</span></label>
                                             <input class="form-control" type="text" name="firstname" required
                                                    value="{{ $user->firstname }}">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>@lang('Middle Name')</label>
-                                            <input class="form-control" type="text" name="middle_name"
-                                                   value="{{ $user->middle_name }}">
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>@lang('Family Name')</label>
-                                            <input class="form-control" type="text" name="family_name"
-                                                   value="{{ $user->family_name }}">
                                         </div>
                                     </div>
 

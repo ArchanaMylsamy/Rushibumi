@@ -34,7 +34,6 @@ class AdminController extends Controller {
         //videos
         $widget['total_videos']   = Video::count();
         $widget['free_videos']    = Video::free()->count();
-        $widget['stock_videos']   = Video::stock()->count();
         $widget['regular_videos'] = Video::regular()->count();
         $widget['short_videos']   = Video::shorts()->count();
         $widget['public_videos']  = Video::public()->count();

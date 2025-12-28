@@ -32,11 +32,9 @@
                         href="mailto:?subject={{ $video->title }}&body={{ route('video.play', [$video->id, $video->slug]) }}">
                         <i class="las la-envelope"></i>
                     </a>
-                    @if ($video->stock_video == \App\Constants\Status::NO)
-                        <a class="share-item embed" href="javascript:void(0)" data-embed-code="{{ htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>') }}">
-                            <i class="las la-code"></i>
-                        </a>
-                    @endif
+                    <a class="share-item embed" href="javascript:void(0)" data-embed-code="{{ htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>') }}">
+                        <i class="las la-code"></i>
+                    </a>
                 </div>
                 <div class="share-embed">
                     <input class="form--control copyText" type="text"

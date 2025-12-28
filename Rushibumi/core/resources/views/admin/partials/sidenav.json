@@ -227,12 +227,6 @@
                 "menu_active": "admin.videos.shorts"
             },
             {
-                "keyword": ["Videos ","Stock Videos", "Manage Videos", "Video management", "video control", "Video List", "video analytics","Cancel", "Reject","Rejected videos","Rejected"],
-                "title": "Stock Videos",
-                "route_name": "admin.videos.stock",
-                "menu_active": "admin.videos.stock"
-            },
-            {
                 "keyword": ["Videos ","Free Videos", "Manage Videos", "Video management", "video control", "Video List", "video analytics","Cancel", "Reject","Rejected videos","Rejected"],
                 "title": "Free Videos",
                 "route_name": "admin.videos.free",

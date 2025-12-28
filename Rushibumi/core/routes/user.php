@@ -120,7 +120,6 @@ Route::middleware('auth')
                     
                     Route::get('videos', 'videos')->name('videos');
                     Route::get('free-videos', 'freeVideos')->name('free.videos');
-                    Route::get('stock-videos', 'stockVideos')->name('stock.videos');
                     Route::get('shorts', 'shorts')->name('shorts');
 
                     Route::get('earnings', 'earnings')->name('earnings');

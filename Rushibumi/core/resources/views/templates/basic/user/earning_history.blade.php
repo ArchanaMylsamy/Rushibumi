@@ -12,11 +12,6 @@
                 <h3 class="dashboard-card__number">{{ gs('cur_sym') }}{{ showAmount($adsEarnings, currencyFormat: false) }}
                 </h3>
             </div>
-            <div class="dashboard-card caribbean-green">
-                <h5 class="dashboard-card__title">@lang('Stock Video sales')</h5>
-                <h3 class="dashboard-card__number">
-                    {{ gs('cur_sym') }}{{ showAmount($stockVideoEarnings, currencyFormat: false) }}</h3>
-            </div>
         </div>
         <div class="dashboard-card-wrapper">
             <div class="dashboard-card purple">
@@ -155,10 +150,6 @@
             [{
                     name: "Total Earnings",
                     data: [],
-                },
-                {
-                    name: "Stock Video Earnings",
-                    data: []
                 },
                 {
                     name: "Ads Earnings",

@@ -205,10 +205,6 @@
                 link="{{ route('admin.videos.free') }}" icon="la la-file-video" bg="success" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget value="{{ $widget['stock_videos'] }}" title="Stock Videos" style="6" outline="true"
-                link="{{ route('admin.videos.stock') }}" icon="la la-hand-holding-usd" bg="danger" />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
             <x-widget value="{{ $widget['regular_videos'] }}" title="Regular Videos" style="6" outline="true"
                 link="{{ route('admin.videos.regular') }}" icon="fas fa-video" bg="warning" />
         </div><!-- dashboard-w1 end -->

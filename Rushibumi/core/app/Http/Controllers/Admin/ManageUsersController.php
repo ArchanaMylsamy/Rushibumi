@@ -129,7 +129,6 @@ class ManageUsersController extends Controller
         $widget['totalShortsVideos'] = $user->videos()->shorts()->count();
         $widget['totalPublicVideos']  = $user->videos()->public()->count();
         $widget['totalPrivateVideos'] = $user->videos()->private()->count();
-        $widget['totalStockVideos']   = $user->videos()->stock()->count();
         $widget['totalFreeVideos']    = $user->videos()->free()->count();
         $countries          = json_decode(file_get_contents(resource_path('views/partials/country.json')));
         return view('admin.users.detail', compact('pageTitle', 'user','totalDeposit','totalWithdrawals','totalTransaction','countries', 'widget'));
@@ -199,10 +198,7 @@ class ManageUsersController extends Controller
         $dialCode       = $countryData->$countryCode->dial_code;
 
         $request->validate([
-            'surname' => 'nullable|string|max:40',
             'firstname' => 'required|string|max:40',
-            'middle_name' => 'nullable|string|max:40',
-            'family_name' => 'nullable|string|max:40',
             'lastname' => 'required|string|max:40',
             'display_name' => 'required|string|max:100|unique:users,display_name,' . $user->id,
             'email' => 'required|email|string|max:40|unique:users,email,' . $user->id,
@@ -231,10 +227,7 @@ class ManageUsersController extends Controller
         }
 
         // Name fields
-        $user->surname = $request->surname ?? null;
         $user->firstname = $request->firstname;
-        $user->middle_name = $request->middle_name ?? null;
-        $user->family_name = $request->family_name ?? null;
         $user->lastname = $request->lastname;
         $user->display_name = $request->display_name;
         

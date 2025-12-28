@@ -227,16 +227,16 @@
 
 @push('style')
 <style>
-    /* Red & Black Theme Styling */
+    /* Theme-aware Dashboard Styling */
     .dashboard-content {
-        background: linear-gradient(135deg, #000000 0%, #1a0000 50%, #000000 100%);
+        background: hsl(var(--body-background));
         position: relative;
         overflow: hidden;
         min-height: 100vh;
         padding: 20px;
     }
 
-    /* Animated Background Effects */
+    /* Animated Background Effects - Theme Aware */
     .dashboard-content::before {
         content: '';
         position: absolute;
@@ -245,25 +245,34 @@
         width: 100%;
         height: 100%;
         background: 
-            radial-gradient(circle at 20% 50%, rgba(220, 20, 60, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(139, 0, 0, 0.2) 0%, transparent 50%),
-            radial-gradient(circle at 40% 20%, rgba(178, 34, 34, 0.1) 0%, transparent 50%);
+            radial-gradient(circle at 20% 50%, rgba(220, 20, 60, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(139, 0, 0, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 20%, rgba(178, 34, 34, 0.05) 0%, transparent 50%);
         animation: pulse-glow 8s ease-in-out infinite;
         z-index: 0;
+        opacity: 0.3;
+    }
+
+    [data-theme="light"] .dashboard-content::before {
+        opacity: 0.15;
     }
 
     @keyframes pulse-glow {
         0%, 100% {
-            opacity: 0.5;
+            opacity: 0.3;
             transform: scale(1);
         }
         50% {
-            opacity: 0.8;
+            opacity: 0.5;
             transform: scale(1.1);
         }
     }
 
-    /* Floating Particles */
+    [data-theme="light"] .dashboard-content::before {
+        opacity: 0.15;
+    }
+
+    /* Floating Particles - Theme Aware */
     .dashboard-content::after {
         content: '';
         position: absolute;
@@ -272,14 +281,19 @@
         top: 0;
         left: 0;
         background-image: 
-            radial-gradient(2px 2px at 20% 30%, rgba(220, 20, 60, 0.3), transparent),
-            radial-gradient(2px 2px at 60% 70%, rgba(139, 0, 0, 0.3), transparent),
-            radial-gradient(1px 1px at 50% 50%, rgba(255, 0, 0, 0.2), transparent),
-            radial-gradient(1px 1px at 80% 10%, rgba(220, 20, 60, 0.2), transparent),
-            radial-gradient(2px 2px at 40% 80%, rgba(139, 0, 0, 0.3), transparent);
+            radial-gradient(2px 2px at 20% 30%, rgba(220, 20, 60, 0.15), transparent),
+            radial-gradient(2px 2px at 60% 70%, rgba(139, 0, 0, 0.15), transparent),
+            radial-gradient(1px 1px at 50% 50%, rgba(255, 0, 0, 0.1), transparent),
+            radial-gradient(1px 1px at 80% 10%, rgba(220, 20, 60, 0.1), transparent),
+            radial-gradient(2px 2px at 40% 80%, rgba(139, 0, 0, 0.15), transparent);
         background-size: 200% 200%;
         animation: particle-move 20s linear infinite;
         z-index: 0;
+        opacity: 0.5;
+    }
+
+    [data-theme="light"] .dashboard-content::after {
+        opacity: 0.2;
     }
 
     @keyframes particle-move {
@@ -296,16 +310,11 @@
         z-index: 1;
     }
 
-    /* Dashboard Cards */
+    /* Dashboard Cards - Theme Aware */
     .dashboard-card {
-        background: rgba(0, 0, 0, 0.85) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(220, 20, 60, 0.1),
-            inset 0 0 60px rgba(220, 20, 60, 0.05) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: hsl(var(--card-bg)) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        box-shadow: var(--box-shadow) !important;
         animation: slideInUp 0.6s ease-out;
         position: relative;
         overflow: hidden;
@@ -318,9 +327,13 @@
         left: -50%;
         width: 200%;
         height: 200%;
-        background: radial-gradient(circle, rgba(220, 20, 60, 0.1) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(220, 20, 60, 0.05) 0%, transparent 70%);
         animation: rotate-glow 10s linear infinite;
         pointer-events: none;
+    }
+
+    [data-theme="light"] .dashboard-card::before {
+        background: radial-gradient(circle, rgba(220, 20, 60, 0.02) 0%, transparent 70%);
     }
 
     @keyframes slideInUp {
@@ -344,123 +357,75 @@
     }
 
     .dashboard-card__title {
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: hsl(var(--heading-color)) !important;
     }
 
     .dashboard-card__number {
-        background: linear-gradient(135deg, #dc143c, #ff1744, #dc143c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: hsl(var(--base)) !important;
         font-weight: 700;
-        text-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
-        animation: text-shimmer 3s ease-in-out infinite;
     }
 
-    @keyframes text-shimmer {
-        0%, 100% {
-            filter: brightness(1);
-        }
-        50% {
-            filter: brightness(1.3);
-        }
-    }
-
-    /* Chart Box */
+    /* Chart Box - Theme Aware */
     .chart-box {
-        background: rgba(0, 0, 0, 0.85) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(220, 20, 60, 0.1),
-            inset 0 0 60px rgba(220, 20, 60, 0.05) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: hsl(var(--card-bg)) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        box-shadow: var(--box-shadow) !important;
         border-radius: 8px;
         padding: 20px;
         margin-top: 20px;
     }
 
     .chart-box__title {
-        background: linear-gradient(135deg, #dc143c, #ff1744, #dc143c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: hsl(var(--heading-color)) !important;
         font-weight: 700;
     }
 
     .chart-title-text {
-        background: rgba(0, 0, 0, 0.6) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
-        color: #ffffff !important;
+        background: hsl(var(--card-bg)) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        color: hsl(var(--body-color)) !important;
         transition: all 0.3s ease !important;
     }
 
     .chart-title-text:hover {
-        border-color: #dc143c !important;
-        box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.2) !important;
+        border-color: hsl(var(--base)) !important;
+        box-shadow: 0 0 0 3px hsla(var(--base), 0.1) !important;
     }
 
-    /* Video Analytics */
+    /* Video Analytics - Theme Aware */
     .video-analytics {
-        background: rgba(0, 0, 0, 0.85) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
-        box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            0 0 0 1px rgba(220, 20, 60, 0.1),
-            inset 0 0 60px rgba(220, 20, 60, 0.05) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: hsl(var(--card-bg)) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        box-shadow: var(--box-shadow) !important;
         border-radius: 8px;
         padding: 20px;
         margin-top: 20px;
     }
 
     .video-analytics__title {
-        background: linear-gradient(135deg, #dc143c, #ff1744, #dc143c);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: hsl(var(--heading-color)) !important;
         font-weight: 700;
     }
 
-    /* Alerts */
+    /* Alerts - Theme Aware */
     .alert {
-        background: rgba(0, 0, 0, 0.85) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        color: rgba(255, 255, 255, 0.9) !important;
+        background: hsl(var(--card-bg)) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        color: hsl(var(--body-color)) !important;
     }
 
     .alert__message {
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: hsl(var(--body-color)) !important;
     }
 
     .link-color {
-        color: rgba(220, 20, 60, 0.9) !important;
+        color: hsl(var(--base)) !important;
         text-decoration: none;
         transition: all 0.3s ease;
     }
 
     .link-color:hover {
-        color: #ff1744 !important;
-    }
-
-    /* Buttons */
-    .btn--base {
-        background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%) !important;
-        border: none !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(220, 20, 60, 0.4) !important;
-    }
-
-    .btn--base:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 25px rgba(220, 20, 60, 0.6) !important;
-        background: linear-gradient(135deg, #ff1744 0%, #dc143c 100%) !important;
+        opacity: 0.8;
     }
 </style>
 @endpush
