@@ -71,8 +71,6 @@ Route::controller('SiteController')->group(function () {
     Route::get('shorts-list', 'shortsList')->name('shorts.list');
     Route::get('load-shorts/{id?}', 'loadShorts')->name('load.shorts.video');
     
-    Route::get('stock-videos', 'stockVideos')->name('stock.video');
-    Route::get('stock-videos-get', 'getStockVideos')->name('stock.video.get');
 
     Route::get('play/{id?}/{slug?}', 'playVideo')->name('video.play');
     Route::get('short-play/{id?}/{slug?}', 'shortPlayVideo')->name('short.play');

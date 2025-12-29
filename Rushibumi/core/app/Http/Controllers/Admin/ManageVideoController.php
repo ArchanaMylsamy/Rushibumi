@@ -44,14 +44,9 @@ class ManageVideoController extends Controller {
         return view('admin.videos.index', compact('pageTitle', 'videos'));
     }
 
-    public function stock($userId = null) {
-        $pageTitle = 'Stock Videos';
-        $videos    = $this->videoData('stock', $userId);
-        return view('admin.videos.index', compact('pageTitle', 'videos'));
-    }
 
     public function free($userId = null) {
-        $pageTitle = 'Stock Videos';
+        $pageTitle = 'Free Videos';
         $videos    = $this->videoData('free', $userId);
         return view('admin.videos.index', compact('pageTitle', 'videos'));
     }
@@ -148,9 +143,7 @@ class ManageVideoController extends Controller {
         });
 
         $video->audience    = $request->audience;
-        $video->stock_video = $request->stock_video;
         $video->is_trending = $request->is_trending ? Status::YES : Status::NO;
-        $video->audience    = $request->audience;
         $video->step        = $video->is_shorts_video ? Status::THIRD_STEP : Status::FOURTH_STEP;
         $video->status      = $request->status;
 
@@ -208,8 +201,6 @@ class ManageVideoController extends Controller {
                 'tags.*'          => 'string',
                 'visibility'      => 'required|in:0,1',
                 'audience'        => 'required|in:0,1',
-                'stock_video'     => 'nullable|integer|in:0,1',
-                'price'           => 'required_if:stock_video,1|nullable|numeric',
                 'caption.*'       => [
                     'sometimes',
                     function ($value, $fail) use ($request) {
@@ -241,7 +232,6 @@ class ManageVideoController extends Controller {
                 'caption.*'         => 'Caption is required when subtitle file or language code is present.',
                 'language_code.*'   => 'Language code must be a string and is required when caption or subtitle file is present.',
                 'subtitle_file.*'   => 'Invalid subtitle format. Subtitle file is required when caption or language code is present.',
-                'price.required_if' => 'Price is required when stock video is enabled.',
             ],
         );
     }
@@ -425,7 +415,13 @@ class ManageVideoController extends Controller {
     public function delete($id)
     {
         try {
-            $video = Video::with('videoFiles', 'subtitles', 'tags', 'storage')->findOrFail($id);
+            $video = Video::with('videoFiles', 'subtitles', 'tags', 'storage')->find($id);
+            
+            // Check if video exists
+            if (!$video) {
+                $notify[] = ['error', 'Video not found'];
+                return back()->withNotify($notify);
+            }
 
             // Delete video files
             foreach ($video->videoFiles as $videoFile) {

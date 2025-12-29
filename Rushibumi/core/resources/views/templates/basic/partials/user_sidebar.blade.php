@@ -9,13 +9,13 @@
             </a>
         </li>
         <li
-            class="dashboard-menu__item  has-dropdown {{ menuActive(['user.videos', 'user.free.videos', 'user.stock.videos', 'user.shorts']) }}">
+            class="dashboard-menu__item  has-dropdown {{ menuActive(['user.videos', 'user.free.videos', 'user.shorts']) }}">
             <a href="javascript:void(0)" class="dashboard-menu__link">
                 <span class="icon"><i class="vti-video"></i></span>
                 <span class="text">@lang('Videos')</span>
             </a>
             <div
-                class="sidebar-submenu {{ menuActive(['user.videos', 'user.free.videos', 'user.stock.videos', 'user.shorts'], 4) }}">
+                class="sidebar-submenu {{ menuActive(['user.videos', 'user.free.videos', 'user.shorts'], 3) }}">
                 <ul class="sidebar-submenu-list">
                     <li class="sidebar-submenu-list__item {{ menuActive('user.videos') }}">
                         <a href="{{ route('user.videos') }}" class="sidebar-submenu-list__link">
@@ -28,13 +28,6 @@
                             <span class="text"> @lang('Free Videos') </span>
                         </a>
                     </li>
-
-                    <li class="sidebar-submenu-list__item {{ menuActive('user.stock.videos') }}">
-                        <a href="{{ route('user.stock.videos') }}" class="sidebar-submenu-list__link">
-                            <span class="text"> @lang('Stock Videos') </span>
-                        </a>
-                    </li>
-
 
                     <li class="sidebar-submenu-list__item {{ menuActive('user.shorts') }}">
                         <a href="{{ route('user.shorts') }}" class="sidebar-submenu-list__link">

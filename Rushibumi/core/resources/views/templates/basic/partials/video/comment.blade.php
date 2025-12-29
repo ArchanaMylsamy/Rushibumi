@@ -26,6 +26,36 @@
 
             <textarea class="form--control reply-form__textarea commentBox" name="comment" placeholder="Add a comment"></textarea>
 
+            <button type="button" class="emoji-picker-btn" title="Add emoji">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                </svg>
+            </button>
+
+            <div class="emoji-picker-container" style="display: none;">
+                <div class="emoji-picker">
+                    <div class="emoji-picker-header">
+                        <input type="text" class="emoji-search" placeholder="Search emoji">
+                    </div>
+                    <div class="emoji-picker-categories">
+                        <button class="emoji-category-btn active" data-category="people">😀</button>
+                        <button class="emoji-category-btn" data-category="nature">❄️</button>
+                        <button class="emoji-category-btn" data-category="food">🍰</button>
+                        <button class="emoji-category-btn" data-category="activity">⚽</button>
+                        <button class="emoji-category-btn" data-category="travel">🚗</button>
+                        <button class="emoji-category-btn" data-category="objects">💡</button>
+                        <button class="emoji-category-btn" data-category="symbols">💎</button>
+                    </div>
+                    <div class="emoji-picker-content">
+                        <div class="emoji-category-title">PEOPLE</div>
+                        <div class="emoji-grid" data-category="people"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="reply-form__input-btn">
                 <button class="reply-form__btn submit-reply" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"

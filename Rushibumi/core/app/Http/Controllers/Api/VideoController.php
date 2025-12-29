@@ -111,7 +111,6 @@ class VideoController extends Controller
                 'name' => $video->category->name,
                 'slug' => $video->category->slug,
             ] : null,
-            'stock_video' => (bool) $video->stock_video,
             'is_purchased' => $isPurchased,
             'video_file_url' => $video->videoFiles->first() ? route('video.path', encrypt($video->videoFiles->first()->id)) : null,
         ];
@@ -207,7 +206,6 @@ class VideoController extends Controller
                         'file_url' => $subtitle->file ? getImage(getFilePath('subtitle') . '/' . $subtitle->file) : null,
                     ];
                 }),
-                'stock_video' => (bool) $video->stock_video,
                 'price' => $video->price ?? 0,
                 'is_purchased' => $isPurchased,
                 'is_liked' => $isLiked,
@@ -383,7 +381,6 @@ class VideoController extends Controller
         $categoryId = $request->get('category_id');
         $userId = $request->get('user_id');
         $trending = $request->get('trending', false);
-        $stockVideo = $request->get('stock_video'); // true/false
         $isShorts = $request->get('is_shorts', false); // true for shorts, false for regular videos
         $sortBy = $request->get('sort_by', 'latest'); // latest, views, likes, oldest
         $dateFrom = $request->get('date_from'); // Y-m-d format
@@ -418,17 +415,6 @@ class VideoController extends Controller
             $query->where('user_id', $userId);
         }
 
-        // Filter by stock video
-        if ($stockVideo !== null) {
-            if ($stockVideo == 'true' || $stockVideo === true || $stockVideo == 1) {
-                $query->where('stock_video', Status::YES);
-            } else {
-                $query->where('stock_video', Status::NO);
-            }
-        } else {
-            // Default: exclude stock videos unless specifically requested
-            $query->where('stock_video', Status::NO);
-        }
 
         // Filter by trending
         if ($trending) {
@@ -488,7 +474,6 @@ class VideoController extends Controller
                 'category_id' => $categoryId,
                 'user_id' => $userId,
                 'trending' => $trending,
-                'stock_video' => $stockVideo,
                 'is_shorts' => $isShorts,
                 'sort_by' => $sortBy,
                 'date_from' => $dateFrom,
@@ -740,14 +725,13 @@ class VideoController extends Controller
     }
 
     /**
-     * Submit video elements (audience, stock video, subtitles)
+     * Submit video elements (audience, subtitles)
      * POST /api/videos/{id}/elements
      */
     public function submitElements(Request $request, $id)
     {
         $request->validate([
             'audience'        => 'required|in:0,1',
-            'price'           => 'required_with:stock_video',
             'caption.*'       => [
                 'sometimes',
                 function ($value, $fail) use ($request) {
@@ -802,13 +786,6 @@ class VideoController extends Controller
         });
 
         $video->audience = $request->audience;
-        if ($request->stock_video) {
-            $video->stock_video = Status::YES;
-            $video->price       = $request->price;
-        } else {
-            $video->stock_video = Status::NO;
-            $video->price       = 0;
-        }
 
         if ($video->status == Status::NO || $video->step < Status::THIRD_STEP) {
             $video->step = Status::THIRD_STEP;

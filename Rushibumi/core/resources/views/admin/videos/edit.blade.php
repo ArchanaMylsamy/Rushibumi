@@ -155,22 +155,6 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-6 form-group">
-                                            <label>@lang('Stock Video')</label>
-                                            <select name="stock_video" class="form-control">
-                                                <option value="1" @selected(old('stock_video', @$video->stock_video) == 1)>@lang('Yes')</option>
-                                                <option value="0" @selected(old('stock_video', @$video->stock_video) == 0)>@lang('No')</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 form-group ">
-                                            <label class="title-label" for="stock01">
-                                                @lang('Price')
-                                            </label>
-                                            <div class="input-group">
-                                                <input class="form-control" name="price" type="number" value="{{ old('price', getAmount($video->price)) }}" placeholder="Price" step="any">
-                                                <span class="input-group-text">{{ __(gs('cur_text')) }}</span>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     @if (!$video->is_shorts_video)

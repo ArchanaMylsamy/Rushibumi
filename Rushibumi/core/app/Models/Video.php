@@ -183,9 +183,6 @@ class Video extends Model {
 
     public function showEligible() {
         $isEligible = true;
-        if ($this->stock_video) {
-            $isEligible = false;
-        }
 
         if (auth()->check()) {
             $user = auth()->user();
@@ -209,11 +206,6 @@ class Video extends Model {
             $playlistVideoIds = $purchasedPlaylist->flatMap(function ($item) {
                 return $item->playlist->videos->pluck('id')->toArray();
             })->unique()->toArray();
-
-            if ($this->stock_video) {
-                $isEligible = $this->user_id == $user->id ? true : in_array($this->id, $user->purchasedVideoId) || in_array($this->id, $purchasePlanVideoIds) || in_array($this->id, $purchasedVideoIds) || in_array($this->id, $playlistVideoIds) || in_array($this->id, $purchasePlanPlaylistVideoIds);
-            }
-
         }
         return $isEligible;
     }

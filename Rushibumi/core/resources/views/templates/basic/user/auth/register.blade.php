@@ -38,23 +38,8 @@
                                 </div>
                                 
                                 <div class="form-group col-sm-6">
-                                    <label class="form--label">@lang('Surname') <span class="text-danger">*</span></label>
-                                    <input class="form-control form--control" name="surname" type="text" value="{{ old('surname') }}" required>
-                                </div>
-                                
-                                <div class="form-group col-sm-6">
                                     <label class="form--label">@lang('First Name') <span class="text-danger">*</span></label>
                                     <input class="form-control form--control" name="firstname" type="text" value="{{ old('firstname') }}" required>
-                                </div>
-                                
-                                <div class="form-group col-sm-6">
-                                    <label class="form--label">@lang('Middle Name')</label>
-                                    <input class="form-control form--control" name="middle_name" type="text" value="{{ old('middle_name') }}">
-                                </div>
-                                
-                                <div class="form-group col-sm-6">
-                                    <label class="form--label">@lang('Family Name')</label>
-                                    <input class="form-control form--control" name="family_name" type="text" value="{{ old('family_name') }}">
                                 </div>
                                 
                                 <div class="form-group col-sm-6">

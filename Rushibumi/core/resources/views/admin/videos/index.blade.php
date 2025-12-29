@@ -12,8 +12,6 @@
                                     <th>@lang('Username / Channel Name')</th>
                                     <th>@lang('Video Type')</th>
                                     <th>@lang('Visibility')</th>
-                                    <th>@lang('Stock Video')</th>
-                                    <th>@lang('Price')</th>
                                     <th>@lang('Step Complete')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Action')</th>
@@ -49,24 +47,6 @@
                                             @endphp
 
                                         </td>
-                                        <td>
-                                            @if ($video->stock_video)
-                                                <span class="badge badge--warning">@lang('Yes')</span>
-                                            @else
-                                                <span class="badge badge--primary">@lang('No')</span>
-                                            @endif
-                                        </td>
-
-                                        <td>
-                                            @if ($video->stock_video)
-                                                <span class="text-muted">{{ showAmount($video->price) }}</span>
-                                            @else
-                                                <span class="text-muted">@lang('N/A') </span>
-                                            @endif
-                                        </td>
-
-
-
                                         <td>
                                             @if ($video->is_shorts_video)
                                                 <span class="text-info">{{ $video->step }}</span> @lang('of') <span class="text--success">3</span>

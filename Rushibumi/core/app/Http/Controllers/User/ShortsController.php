@@ -38,7 +38,13 @@ class ShortsController extends Controller
         try {
             $id = decrypt($id);
             $video = Video::authUser()->where('is_shorts_video', \App\Constants\Status::YES)
-                ->with('subtitles', 'tags', 'storage')->findOrFail($id);
+                ->with('subtitles', 'tags', 'storage')->find($id);
+            
+            // Check if video exists
+            if (!$video) {
+                $notify[] = ['error', 'Video not found or you do not have permission to delete this video'];
+                return back()->withNotify($notify);
+            }
             
             // Double check: Ensure video belongs to current user
             if ($video->user_id != auth()->id()) {

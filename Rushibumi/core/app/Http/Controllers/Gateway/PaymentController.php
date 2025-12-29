@@ -46,7 +46,6 @@ class PaymentController extends Controller {
             'amount'       => 'required|numeric|gt:0',
             'gateway'      => 'required',
             'currency'     => 'required',
-            'video_id'     => 'sometimes|integer',
             'playlist_id'  => 'sometimes|integer',
             'plan_id'      => 'sometimes|integer',
             'monetization' => 'nullable|in:1',
@@ -64,17 +63,13 @@ class PaymentController extends Controller {
             abort(404);
         }
 
-        $video         = null;
         $advertisement = null;
         $playlist      = null;
         $plan          = null;
 
         $user = auth()->user();
 
-        if ($request->video_id) {
-            $video  = Video::published()->stock()->findOrFail($request->video_id);
-            $amount = $video->price;
-        } else if ($request->playlist_id) {
+        if ($request->playlist_id) {
             $playlist = Playlist::public()->playlistForSell()->findOrFail($request->playlist_id);
             $amount   = $playlist->price;
         } else if ($request->plan_id) {
@@ -118,11 +113,7 @@ class PaymentController extends Controller {
         $data->btc_wallet      = "";
         $data->trx             = getTrx();
 
-        if ($video) {
-            $data->video_id    = $video->id;
-            $data->success_url = route('video.play', [$video->id, $video->slug]);
-            $data->failed_url  = route('video.play', [$video->id, $video->slug]);
-        } else if ($playlist) {
+        if ($playlist) {
             $data->playlist_id = $playlist->id;
             $data->success_url = route('preview.playlist.videos', [@$playlist->slug, @$playlist->user->slug]);
             $data->failed_url  = route('preview.playlist.videos', [@$playlist->slug, @$playlist->user->slug]);
@@ -207,65 +198,6 @@ class PaymentController extends Controller {
                 self::createAdminNotification($user->id, 'Payment successful via ' . $methodName);
             }
 
-            if ($deposit->video_id) {
-                $videoOwner = User::find($deposit->video->user_id);
-                $videoOwner->balance += $deposit->amount;
-                $videoOwner->save();
-
-                $user->balance -= $deposit->amount;
-                $user->save();
-
-                $transaction               = new Transaction();
-                $transaction->user_id      = $user->id;
-                $transaction->video_id     = $deposit->video_id;
-                $transaction->amount       = $deposit->amount;
-                $transaction->post_balance = $user->balance;
-                $transaction->charge       = $deposit->charge;
-                $transaction->trx_type     = '-';
-                $transaction->details      = 'Payment for video purchase via ' . $methodName;
-                $transaction->trx          = $deposit->trx;
-                $transaction->remark       = 'purchased_video';
-                $transaction->save();
-
-                $transaction               = new Transaction();
-                $transaction->user_id      = $videoOwner->id;
-                $transaction->video_id     = $deposit->video_id;
-                $transaction->amount       = $deposit->amount;
-                $transaction->post_balance = $videoOwner->balance;
-                $transaction->charge       = 0;
-                $transaction->trx_type     = '+';
-                $transaction->details      = $deposit->user->fullname . " purchased your video.";
-                $transaction->trx          = $deposit->trx;
-                $transaction->remark       = 'earn_from_video';
-                $transaction->save();
-
-                $purchased           = new PurchasedVideo();
-                $purchased->user_id  = $deposit->user_id;
-                $purchased->video_id = $deposit->video_id;
-                $purchased->owner_id = $deposit->video->user_id;
-                $purchased->trx      = $deposit->trx;
-                $purchased->amount   = $deposit->amount;
-                $purchased->save();
-
-                if (gs('video_sell_charge') > 0) {
-                    $commission = ($deposit->amount * gs('video_sell_charge')) / 100;
-                    $videoOwner->balance -= $commission;
-                    $videoOwner->save();
-
-                    $transaction               = new Transaction();
-                    $transaction->user_id      = $videoOwner->id;
-                    $transaction->video_id     = $deposit->video_id;
-                    $transaction->amount       = $commission;
-                    $transaction->post_balance = $videoOwner->balance;
-                    $transaction->charge       = 0;
-                    $transaction->trx_type     = '-';
-                    $transaction->details      = "Platform commission for video sale";
-                    $transaction->trx          = $deposit->trx;
-                    $transaction->remark       = 'video_sale_commission';
-                    $transaction->save();
-                }
-
-                self::createAdminNotification($user->id, 'Payment successful via ' . $methodName);
 
                 self::createUserNotification(
                     $deposit->video->user_id,

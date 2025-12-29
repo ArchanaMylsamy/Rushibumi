@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('playlists')) {
         Schema::create('playlists', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
         });
+        }
     }
 
     /**

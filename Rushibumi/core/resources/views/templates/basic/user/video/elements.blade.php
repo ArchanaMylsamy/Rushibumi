@@ -86,35 +86,6 @@
                 </div>
             </div>
 
-            <div class="form-group stock-video-wrapper">
-
-                <label class="title-label stock-video" for="stock01">
-                    <span class="check-circle-inner">
-                        <svg class="check-circle" width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path class="check" d="M1 5L4.5 8.5L12.5 0.5" stroke="currentColor" stroke-linecap="round">
-                            </path>
-                        </svg>
-                    </span>
-
-                    <span class="icon">
-                        <svg class="_24ydrq0 _1286nb17o _1286nb12r6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="32" height="32">
-                            <path fill="currentColor" d="M486.2 50.2c-9.6-3.8-20.5-1.3-27.5 6.2l-98.2 125.5-83-161.1C273 13.2 264.9 8.5 256 8.5s-17.1 4.7-21.5 12.3l-83 161.1L53.3 56.5c-7-7.5-17.9-10-27.5-6.2C16.3 54 10 63.2 10 73.5v333c0 35.8 29.2 65 65 65h362c35.8 0 65-29.2 65-65v-333c0-10.3-6.3-19.5-15.8-23.3">
-                            </path>
-                        </svg>
-                    </span>
-                    <span class="text">@lang('Stock Video')</span>
-                    <input class="form-check-input" id="stock01" name="stock_video" type="checkbox" hidden @if (@$video->stock_video) checked @endif>
-                </label>
-            </div>
-
-
-            <div class="form-group stock-price">
-                <label class="form--label">@lang('Stock Price')</label>
-                <div class="input-group">
-                    <input class="form--control form-control" name="price" type="number" value="{{ getAmount(@$video->price) }}" placeholder="Price" step="any">
-                    <span class="input-group-text btn--base">{{ __(gs('cur_text')) }}</span>
-                </div>
-            </div>
 
             <div class="form-group upload-buttons mb-0">
                 <a class="btn btn--dark" href="{{ route('user.video.details.form', @$video->id) }}">@lang('Previous')</a>

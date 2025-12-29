@@ -34,8 +34,8 @@
     /* Sidebar Styling */
     .sidebar-menu {
         background: rgba(0, 0, 0, 0.95) !important;
-        border-right: 2px solid rgba(220, 20, 60, 0.3) !important;
-        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(220, 20, 60, 0.1) !important;
+        border-right: 1px solid hsl(var(--border-color)) !important;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5) !important;
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
     }
@@ -52,7 +52,7 @@
     }
 
     .sidebar-logo {
-        border-bottom: 1px solid rgba(220, 20, 60, 0.2);
+        border-bottom: 1px solid hsl(var(--border-color));
         padding-bottom: 20px;
         margin-bottom: 20px;
     }
@@ -65,6 +65,40 @@
     .sidebar-logo__link:hover {
         transform: scale(1.05);
         filter: drop-shadow(0 0 10px rgba(220, 20, 60, 0.6));
+    }
+
+    /* Orange R for collapsed sidebar only - hidden by default */
+    .side-sm-logo {
+        display: none !important;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        width: 32px;
+        height: 32px;
+    }
+
+    .sidebar-logo-r {
+        display: inline-block;
+        font-size: 28px;
+        font-weight: 700;
+        color: #ff6600;
+        line-height: 1;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* Show orange R only when sidebar is collapsed and center it */
+    @media (min-width: 1400px) {
+        .sidebar-menu.show-sm .side-sm-logo {
+            display: flex !important;
+            margin: 0 auto;
+        }
+        
+        .sidebar-menu.show-sm .sidebar-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+        }
     }
 
     .sidebar-menu-list__link {
@@ -123,7 +157,7 @@
     }
 
     .separate-border {
-        border-top: 1px solid rgba(220, 20, 60, 0.2);
+        border-top: 1px solid hsl(var(--border-color));
         margin: 16px 0;
     }
 
@@ -144,7 +178,7 @@
     /* Header Styling */
     .home-header {
         background: rgba(0, 0, 0, 0.9) !important;
-        border-bottom: 2px solid rgba(220, 20, 60, 0.3) !important;
+        border-bottom: 1px solid hsl(var(--border-color)) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
@@ -157,15 +191,15 @@
     /* Search Form */
     .search-form .form--control {
         background: rgba(0, 0, 0, 0.6) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         color: #ffffff !important;
         border-radius: 24px !important;
         padding: 10px 50px 10px 20px !important;
     }
 
     .search-form .form--control:focus {
-        border-color: #dc143c !important;
-        box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.2) !important;
+        border-color: hsl(var(--base)) !important;
+        box-shadow: 0 0 0 3px hsla(var(--base), 0.1) !important;
         outline: none !important;
     }
 
@@ -268,7 +302,7 @@
     /* Tag Sliders */
     .tag-item {
         background: rgba(0, 0, 0, 0.6) !important;
-        border: 2px solid rgba(220, 20, 60, 0.3) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         color: rgba(255, 255, 255, 0.8) !important;
         border-radius: 20px !important;
         padding: 8px 16px !important;
@@ -278,9 +312,9 @@
 
     .tag-item:hover,
     .tag-item.active {
-        background: rgba(220, 20, 60, 0.2) !important;
-        border-color: #dc143c !important;
-        color: #dc143c !important;
+        background: hsla(var(--base), 0.1) !important;
+        border-color: hsl(var(--base)) !important;
+        color: hsl(var(--base)) !important;
         transform: translateY(-2px);
     }
 
@@ -289,7 +323,7 @@
     /* Light Theme - Sidebar */
     [data-theme="light"] .sidebar-menu {
         background: rgba(255, 255, 255, 0.95) !important;
-        border-right: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border-right: 1px solid hsl(var(--border-color)) !important;
     }
 
     [data-theme="light"] .sidebar-menu-list__link {
@@ -317,18 +351,18 @@
     }
 
     [data-theme="light"] .separate-border {
-        border-top: 1px solid rgba(220, 20, 60, 0.15);
+        border-top: 1px solid hsl(var(--border-color));
     }
 
     /* Light Theme - Header */
     [data-theme="light"] .home-header {
         background: rgba(255, 255, 255, 0.95) !important;
-        border-bottom: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border-bottom: 1px solid hsl(var(--border-color)) !important;
     }
 
     [data-theme="light"] .search-form .form--control {
         background: rgba(255, 255, 255, 0.9) !important;
-        border: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         color: #000000 !important;
     }
 
@@ -337,7 +371,7 @@
     }
 
     [data-theme="light"] .search-form .form--control:focus {
-        border-color: #dc143c !important;
+        border-color: hsl(var(--base)) !important;
         background: rgba(255, 255, 255, 1) !important;
     }
 
@@ -365,15 +399,15 @@
     /* Light Theme - Tag Sliders */
     [data-theme="light"] .tag-item {
         background: rgba(255, 255, 255, 0.9) !important;
-        border: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         color: rgba(0, 0, 0, 0.8) !important;
     }
 
     [data-theme="light"] .tag-item:hover,
     [data-theme="light"] .tag-item.active {
-        background: rgba(220, 20, 60, 0.15) !important;
-        border-color: #dc143c !important;
-        color: #dc143c !important;
+        background: hsla(var(--base), 0.1) !important;
+        border-color: hsl(var(--base)) !important;
+        color: hsl(var(--base)) !important;
     }
 
     /* Light Theme - Video Items */
@@ -425,11 +459,11 @@
     }
 
     [data-theme="light"] .video-item__channel-author {
-        border: 3px solid rgba(220, 20, 60, 0.3) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
     }
 
     [data-theme="light"] .video-item:hover .video-item__channel-author {
-        border-color: #dc143c !important;
+        border-color: hsl(var(--base)) !important;
     }
 
     /* Light Theme - Section Titles */
@@ -487,7 +521,7 @@
 
     /* Light Theme - Sidebar Logo */
     [data-theme="light"] .sidebar-logo {
-        border-bottom: 1px solid rgba(220, 20, 60, 0.15);
+        border-bottom: 1px solid hsl(var(--border-color));
     }
 
     /* Light Theme - Home Body */
@@ -523,11 +557,11 @@
     /* Light Theme - Notification List */
     [data-theme="light"] .notification__list {
         background: rgba(255, 255, 255, 0.98);
-        border: 1px solid rgba(220, 20, 60, 0.2);
+        border: 1px solid hsl(var(--border-color));
     }
 
     [data-theme="light"] .notification__list-item {
-        border-bottom: 1px solid rgba(220, 20, 60, 0.1);
+        border-bottom: 1px solid hsl(var(--border-color));
     }
 
     [data-theme="light"] .notification__list-link {
@@ -541,7 +575,7 @@
     /* Light Theme - Create Dropdown */
     [data-theme="light"] .create__list {
         background: rgba(255, 255, 255, 0.98);
-        border: 1px solid rgba(220, 20, 60, 0.2);
+        border: 1px solid hsl(var(--border-color));
     }
 
     [data-theme="light"] .create__list-link {
@@ -735,7 +769,7 @@
     .video-item__channel-author {
         width: 32px !important;
         height: 32px !important;
-        border: 2px solid rgba(220, 20, 60, 0.4) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         border-radius: 50% !important;
         transition: all 0.3s ease;
         margin: 0 8px 0 0 !important;
@@ -755,8 +789,8 @@
     }
 
     .video-item:hover .video-item__channel-author {
-        border-color: #dc143c !important;
-        box-shadow: 0 0 10px rgba(220, 20, 60, 0.5);
+        border-color: hsl(var(--base)) !important;
+        box-shadow: 0 0 10px hsla(var(--base), 0.3);
     }
 
     .video-item__content .channel-info {
@@ -821,8 +855,8 @@
     }
 
     .premium-icon {
-        background: rgba(220, 20, 60, 0.3) !important;
-        border: 1px solid rgba(220, 20, 60, 0.6) !important;
+        background: hsla(var(--base), 0.2) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
         backdrop-filter: blur(5px);
     }
 
@@ -935,7 +969,7 @@
     /* Light Theme Overrides */
     [data-theme="light"] .sidebar-menu {
         background: rgba(255, 255, 255, 0.95) !important;
-        border-right: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border-right: 1px solid hsl(var(--border-color)) !important;
     }
 
     [data-theme="light"] .sidebar-menu-list__link {
@@ -952,7 +986,7 @@
     }
 
     [data-theme="light"] .video-item__thumb {
-        border-color: rgba(220, 20, 60, 0.4) !important;
+        border-color: hsl(var(--border-color)) !important;
     }
 
     [data-theme="light"] .video-item__content {
@@ -969,7 +1003,7 @@
 
     [data-theme="light"] .home-header {
         background: rgba(255, 255, 255, 0.95) !important;
-        border-bottom: 2px solid rgba(220, 20, 60, 0.2) !important;
+        border-bottom: 1px solid hsl(var(--border-color)) !important;
     }
 
     /* Watch Later & Watch History Video Items - Now using video-item styling */
@@ -996,9 +1030,9 @@
     }
 
     .video-item .meta .ellipsis-list__btn:hover {
-        background: rgba(220, 20, 60, 0.3);
-        border-color: rgba(220, 20, 60, 0.5);
-        color: #dc143c;
+        background: hsla(var(--base), 0.2);
+        border-color: hsl(var(--base));
+        color: hsl(var(--base));
         transform: scale(1.1);
     }
 
@@ -1014,9 +1048,9 @@
     }
 
     [data-theme="light"] .video-item .meta .ellipsis-list__btn:hover {
-        background: rgba(220, 20, 60, 0.1);
-        border-color: rgba(220, 20, 60, 0.3);
-        color: #dc143c;
+        background: hsla(var(--base), 0.1);
+        border-color: hsl(var(--base));
+        color: hsl(var(--base));
     }
 
     /* FINAL DARK MODE OVERRIDE - Remove ALL backgrounds on hover */
