@@ -110,6 +110,36 @@
                 <form class="commnet-form comment-form">
                     <textarea class="form--control reply-form__textarea commentBox" name="comment" placeholder="Add a comment"></textarea>
 
+                    <button type="button" class="emoji-picker-btn" title="Add emoji">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </button>
+
+                    <div class="emoji-picker-container" style="display: none;">
+                        <div class="emoji-picker">
+                            <div class="emoji-picker-header">
+                                <input type="text" class="emoji-search" placeholder="Search emoji">
+                            </div>
+                            <div class="emoji-picker-categories">
+                                <button class="emoji-category-btn active" data-category="people">😀</button>
+                                <button class="emoji-category-btn" data-category="nature">❄️</button>
+                                <button class="emoji-category-btn" data-category="food">🍰</button>
+                                <button class="emoji-category-btn" data-category="activity">⚽</button>
+                                <button class="emoji-category-btn" data-category="travel">🚗</button>
+                                <button class="emoji-category-btn" data-category="objects">💡</button>
+                                <button class="emoji-category-btn" data-category="symbols">💎</button>
+                            </div>
+                            <div class="emoji-picker-content">
+                                <div class="emoji-category-title">PEOPLE</div>
+                                <div class="emoji-grid" data-category="people"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="reply-form__input-btn">
                         <button class="reply-form__btn submit-reply" type="submit">
                             <svg class="lucide lucide-send-horizontal" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -185,6 +215,160 @@
 
         .short-play-body {
             z-index: 1;
+        }
+
+        /* Emoji Picker Styles */
+        .emoji-picker-btn {
+            position: absolute;
+            right: 50px;
+            bottom: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: hsl(var(--base));
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        .emoji-picker-btn:hover {
+            color: hsl(var(--base));
+            transform: scale(1.1);
+        }
+
+        .form-group.position-relative,
+        .comment-form {
+            position: relative;
+        }
+
+        .emoji-picker-container {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 10px;
+            z-index: 1000;
+            background: hsl(var(--white));
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 352px;
+            max-width: calc(100vw - 20px);
+        }
+
+        [data-theme="dark"] .emoji-picker-container {
+            background: hsl(var(--black));
+            border: 1px solid hsl(var(--border-color));
+        }
+
+        .emoji-picker {
+            display: flex;
+            flex-direction: column;
+            height: 435px;
+        }
+
+        .emoji-picker-header {
+            padding: 12px;
+            border-bottom: 1px solid hsl(var(--border-color));
+        }
+
+        .emoji-search {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid hsl(var(--border-color));
+            border-radius: 8px;
+            font-size: 14px;
+            background: hsl(var(--section-bg));
+            color: hsl(var(--text-color));
+        }
+
+        .emoji-picker-categories {
+            display: flex;
+            padding: 8px;
+            gap: 4px;
+            border-bottom: 1px solid hsl(var(--border-color));
+            overflow-x: auto;
+        }
+
+        .emoji-category-btn {
+            background: transparent;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .emoji-category-btn:hover {
+            background: hsl(var(--section-bg));
+        }
+
+        .emoji-category-btn.active {
+            background: hsl(var(--base));
+            opacity: 0.8;
+        }
+
+        .emoji-picker-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .emoji-category-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: hsl(var(--text-color));
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+
+        .emoji-item {
+            font-size: 24px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .emoji-item:hover {
+            background: hsl(var(--section-bg));
+            transform: scale(1.2);
+        }
+
+        /* Reply form emoji picker positioning */
+        .reply-form {
+            position: relative;
+        }
+
+        .reply-form .emoji-picker-container {
+            bottom: auto;
+            top: 100%;
+            margin-top: 10px;
+        }
+
+        .reply-form .emoji-picker-btn {
+            position: absolute;
+            right: 50px;
+            bottom: 10px;
+        }
+
+        .comment-form .emoji-picker-btn {
+            position: absolute;
+            right: 50px;
+            bottom: 10px;
         }
 
         .cmn-button-item {

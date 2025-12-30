@@ -194,7 +194,29 @@
         border: 1px solid hsl(var(--border-color)) !important;
         color: #ffffff !important;
         border-radius: 24px !important;
-        padding: 10px 50px 10px 20px !important;
+        padding: 10px 80px 10px 45px !important;
+    }
+
+    /* Search Clear Button */
+    .search-clear-btn {
+        position: absolute;
+        right: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: color 0.2s ease;
+    }
+
+    .search-clear-btn:hover {
+        color: #ffffff;
     }
 
     .search-form .form--control:focus {
@@ -361,18 +383,28 @@
     }
 
     [data-theme="light"] .search-form .form--control {
-        background: rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid hsl(var(--border-color)) !important;
+        background: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+        color: #000000 !important;
+        padding: 10px 80px 10px 45px !important;
+    }
+
+    [data-theme="light"] .search-clear-btn {
+        color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    [data-theme="light"] .search-clear-btn:hover {
         color: #000000 !important;
     }
 
     [data-theme="light"] .search-form .form--control::placeholder {
-        color: rgba(0, 0, 0, 0.5) !important;
+        color: #808080 !important;
     }
 
     [data-theme="light"] .search-form .form--control:focus {
-        border-color: hsl(var(--base)) !important;
-        background: rgba(255, 255, 255, 1) !important;
+        border-color: #e0e0e0 !important;
+        background: #ffffff !important;
+        box-shadow: 0 0 0 1px #e0e0e0 !important;
     }
 
     [data-theme="light"] .menu-button {
@@ -487,20 +519,20 @@
 
     /* Light Theme - Search Button */
     [data-theme="light"] .search-form-btn {
-        color: rgba(220, 20, 60, 0.7);
+        color: #000000 !important;
     }
 
     [data-theme="light"] .search-form-btn:hover {
-        color: #dc143c;
+        color: #333333 !important;
     }
 
     /* Light Theme - Mic Button */
     [data-theme="light"] .home-header__left-mic {
-        color: rgba(220, 20, 60, 0.7);
+        color: #000000 !important;
     }
 
     [data-theme="light"] .home-header__left-mic:hover {
-        color: #dc143c;
+        color: #333333 !important;
     }
 
     /* Light Theme - Create Button Text */

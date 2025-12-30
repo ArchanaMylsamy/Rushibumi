@@ -39,12 +39,15 @@
                                 
                                 <div class="form-group col-sm-6">
                                     <label class="form--label">@lang('First Name') <span class="text-danger">*</span></label>
-                                    <input class="form-control form--control" name="firstname" type="text" value="{{ old('firstname') }}" required>
+                                    <input class="form-control form--control" name="firstname" type="text" value="{{ old('firstname') }}">
                                 </div>
                                 
                                 <div class="form-group col-sm-6">
                                     <label class="form--label">@lang('Last Name') <span class="text-danger">*</span></label>
-                                    <input class="form-control form--control" name="lastname" type="text" value="{{ old('lastname') }}" required>
+                                    <input class="form-control form--control" name="lastname" type="text" value="{{ old('lastname') }}">
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted">@lang('At least one of First Name or Last Name is required')</small>
                                 </div>
                                 
                                 <div class="form-group col-sm-6">
@@ -188,16 +191,21 @@
                                     <input class="form-control form--control" name="government_id" type="text" value="{{ old('government_id') }}" required placeholder="@lang('Enter your government ID number')">
                                 </div>
 
+                                <!-- Password Section -->
+                                <div class="col-12 mt-4">
+                                    <h5 class="text-center mb-4 section-title">@lang('Create Password')</h5>
+                                </div>
+
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form--label">@lang('Password')</label>
+                                        <label class="form--label">@lang('Password') <span class="text-danger">*</span></label>
                                         <input class="form-control form--control @if (gs('secure_password')) secure-password @endif" name="password" type="password" required>
                                     </div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form--label">@lang('Confirm Password')</label>
+                                        <label class="form--label">@lang('Confirm Password') <span class="text-danger">*</span></label>
                                         <input class="form-control form--control" name="password_confirmation" type="password" required>
                                     </div>
                                 </div>
