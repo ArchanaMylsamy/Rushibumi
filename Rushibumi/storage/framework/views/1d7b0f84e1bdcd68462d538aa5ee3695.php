@@ -38,12 +38,15 @@
                                 
                                 <div class="form-group col-sm-6">
                                     <label class="form--label"><?php echo app('translator')->get('First Name'); ?> <span class="text-danger">*</span></label>
-                                    <input class="form-control form--control" name="firstname" type="text" value="<?php echo e(old('firstname')); ?>" required>
+                                    <input class="form-control form--control" name="firstname" type="text" value="<?php echo e(old('firstname')); ?>">
                                 </div>
                                 
                                 <div class="form-group col-sm-6">
                                     <label class="form--label"><?php echo app('translator')->get('Last Name'); ?> <span class="text-danger">*</span></label>
-                                    <input class="form-control form--control" name="lastname" type="text" value="<?php echo e(old('lastname')); ?>" required>
+                                    <input class="form-control form--control" name="lastname" type="text" value="<?php echo e(old('lastname')); ?>">
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted"><?php echo app('translator')->get('At least one of First Name or Last Name is required'); ?></small>
                                 </div>
                                 
                                 <div class="form-group col-sm-6">
@@ -187,16 +190,21 @@
                                     <input class="form-control form--control" name="government_id" type="text" value="<?php echo e(old('government_id')); ?>" required placeholder="<?php echo app('translator')->get('Enter your government ID number'); ?>">
                                 </div>
 
+                                <!-- Password Section -->
+                                <div class="col-12 mt-4">
+                                    <h5 class="text-center mb-4 section-title"><?php echo app('translator')->get('Create Password'); ?></h5>
+                                </div>
+
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form--label"><?php echo app('translator')->get('Password'); ?></label>
+                                        <label class="form--label"><?php echo app('translator')->get('Password'); ?> <span class="text-danger">*</span></label>
                                         <input class="form-control form--control <?php if(gs('secure_password')): ?> secure-password <?php endif; ?>" name="password" type="password" required>
                                     </div>
                                 </div>
 
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="form--label"><?php echo app('translator')->get('Confirm Password'); ?></label>
+                                        <label class="form--label"><?php echo app('translator')->get('Confirm Password'); ?> <span class="text-danger">*</span></label>
                                         <input class="form-control form--control" name="password_confirmation" type="password" required>
                                     </div>
                                 </div>

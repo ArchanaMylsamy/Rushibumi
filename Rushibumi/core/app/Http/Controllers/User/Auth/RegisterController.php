@@ -48,9 +48,9 @@ class RegisterController extends Controller
         }
 
         $validate = Validator::make($data, [
-            // Name fields
-            'firstname' => 'required|string|max:40',
-            'lastname' => 'required|string|max:40',
+            // Name fields - at least one is required
+            'firstname' => 'nullable|string|max:40',
+            'lastname' => 'nullable|string|max:40',
             'display_name' => 'required|string|max:100|unique:users',
             
             // Contact information
@@ -68,8 +68,6 @@ class RegisterController extends Controller
             'captcha' => 'sometimes|required',
             'agree' => $agree
         ], [
-            'firstname.required' => 'The first name field is required',
-            'lastname.required' => 'The last name field is required',
             'display_name.required' => 'The display name field is required',
             'display_name.unique' => 'This display name is already taken',
             'phone_number.required' => 'The phone number field is required',
@@ -81,6 +79,14 @@ class RegisterController extends Controller
             'government_id_type.required' => 'The government ID type field is required',
             'government_id_type.in' => 'Please select a valid government ID type'
         ]);
+
+        // Custom validation: At least one of firstname or lastname must be provided
+        $validate->after(function ($validator) use ($data) {
+            if (empty($data['firstname']) && empty($data['lastname'])) {
+                $validator->errors()->add('firstname', 'Either first name or last name is required.');
+                $validator->errors()->add('lastname', 'Either first name or last name is required.');
+            }
+        });
 
         return $validate;
     }
@@ -120,9 +126,9 @@ class RegisterController extends Controller
         $user->email = strtolower($data['email']);
         $user->password = Hash::make($data['password']);
         
-        // Name fields
-        $user->firstname = $data['firstname'];
-        $user->lastname = $data['lastname'];
+        // Name fields - at least one is required (validated above)
+        $user->firstname = $data['firstname'] ?? '';
+        $user->lastname = $data['lastname'] ?? '';
         $user->display_name = $data['display_name'];
         
         // Contact information

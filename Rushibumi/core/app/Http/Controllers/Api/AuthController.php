@@ -32,9 +32,9 @@ class AuthController extends Controller
         $agree = 'nullable';
 
         $validator = Validator::make($request->all(), [
-            // Name fields
-            'firstname' => 'required|string|max:40',
-            'lastname' => 'required|string|max:40',
+            // Name fields - at least one is required
+            'firstname' => 'nullable|string|max:40',
+            'lastname' => 'nullable|string|max:40',
             'display_name' => 'required|string|max:100|unique:users',
             
             // Contact information
@@ -57,6 +57,14 @@ class AuthController extends Controller
             'password.symbols' => 'The password must contain at least one symbol.',
         ]);
 
+        // Custom validation: At least one of firstname or lastname must be provided
+        $validator->after(function ($validator) use ($request) {
+            if (empty($request->firstname) && empty($request->lastname)) {
+                $validator->errors()->add('firstname', 'Either first name or last name is required.');
+                $validator->errors()->add('lastname', 'Either first name or last name is required.');
+            }
+        });
+
         if ($validator->fails()) {
             return responseError('validation_error', $validator->errors()->all());
         }
@@ -68,9 +76,9 @@ class AuthController extends Controller
         $user->email = strtolower($request->email);
         $user->password = Hash::make($request->password);
         
-        // Name fields
-        $user->firstname = $request->firstname;
-        $user->lastname = $request->lastname;
+        // Name fields - at least one is required (validated above)
+        $user->firstname = $request->firstname ?? '';
+        $user->lastname = $request->lastname ?? '';
         $user->display_name = $request->display_name;
         
         // Contact information

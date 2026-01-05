@@ -22,10 +22,13 @@
             <div class="search-form-wrapper">
                 <form class="search-form" action="<?php echo e(route('search')); ?>">
                     <div class="form-group">
-                        <input class="form--control" name="search" type="text" value="<?php echo e(request()->search); ?>"
+                        <input class="form--control search-input" name="search" type="text" value="<?php echo e(request()->search); ?>"
                             ">
                         <button class="search-form-btn" type="submit">
                             <i class="vti-search"></i>
+                        </button>
+                        <button type="button" class="search-clear-btn" style="display: none;">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </form>
@@ -438,6 +441,36 @@
                     $('.popup-container__title').text('<?php echo app('translator')->get('Search with your voice'); ?>');
                     $('.micActiveBtn').removeClass('active');
                 };
+
+                // Search clear button functionality
+                var searchInput = $('.search-input');
+                var clearBtn = $('.search-clear-btn');
+
+                // Show/hide clear button based on input value
+                function toggleClearButton() {
+                    if (searchInput.val().length > 0) {
+                        clearBtn.show();
+                    } else {
+                        clearBtn.hide();
+                    }
+                }
+
+                // Check on page load if there's a value
+                toggleClearButton();
+
+                // Show/hide on input
+                searchInput.on('input', function() {
+                    toggleClearButton();
+                });
+
+                // Clear input when clear button is clicked
+                clearBtn.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    searchInput.val('');
+                    searchInput.focus();
+                    clearBtn.hide();
+                });
             });
 
         })(jQuery)
