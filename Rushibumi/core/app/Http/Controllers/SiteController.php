@@ -1,7 +1,7 @@
 <?php
-
+ 
 namespace App\Http\Controllers;
-
+ 
 use App\Constants\Status;
 use App\Models\Advertisement;
 use App\Models\AdvertisementAnalytics;
@@ -21,25 +21,31 @@ use App\Models\WatchHistory;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-
+ 
 class SiteController extends Controller {
     public function index() {
-
+ 
         $pageTitle   = 'Home';
         $sections    = Page::where('tempname', activeTemplate())->where('slug', '/')->first();
         $seoContents = $sections->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
-
+ 
         $baseVideos = Video::published()->public()->withoutOnlyPlaylist()->withWhereHas('user', function ($query) {
             $query->active();
         })->orderBy('id', 'desc');
-
+ 
+        // Get shorts videos (will be displayed in rows between video chunks)
         $shortVideos = (clone $baseVideos)->shorts()->take(15)->get();
-        $videos      = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->paginate(getPaginate());
-
-        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos'));
+       
+        // Get all videos (not paginated, we'll chunk them in the view)
+        $allVideos = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->get();
+       
+        // For pagination, we still need the paginated version for infinite scroll
+        $videos = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->paginate(getPaginate());
+ 
+        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos', 'allVideos'));
     }
-
+ 
     public function search(Request $request) {
         $pageTitle   = 'Search';
         $sections    = Page::where('tempname', activeTemplate())->where('slug', '/')->first();
@@ -52,10 +58,10 @@ class SiteController extends Controller {
             ->regular()
             ->with('videoFiles')
             ->paginate(getPaginate());
-
+ 
         return view('Template::search', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos'));
     }
-
+ 
     public function shortsList() {
         $pageTitle   = 'Shorts';
         $shortVideos = Video::published()->public()->whereHas('user', function ($query) {
@@ -63,7 +69,7 @@ class SiteController extends Controller {
         })->shorts()->latest()->paginate(getPaginate());
         return view('Template::shorts', compact('pageTitle', 'shortVideos'));
     }
-
+ 
     public function pages($slug) {
         $page        = Page::where('tempname', activeTemplate())->where('slug', $slug)->firstOrFail();
         $pageTitle   = $page->name;
@@ -72,7 +78,7 @@ class SiteController extends Controller {
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
         return view('Template::pages', compact('pageTitle', 'sections', 'seoContents', 'seoImage'));
     }
-
+ 
     public function policyPages($slug) {
         $policy      = Frontend::where('slug', $slug)->where('data_keys', 'policy_pages.element')->firstOrFail();
         $pageTitle   = $policy->data_values->title;
@@ -80,7 +86,7 @@ class SiteController extends Controller {
         $seoImage    = @$seoContents->image ? frontendImage('policy_pages', $seoContents->image, getFileSize('seo'), true) : null;
         return view('Template::policy', compact('policy', 'pageTitle', 'seoContents', 'seoImage'));
     }
-
+ 
     public function changeLanguage($lang = null) {
         $language = Language::where('code', $lang)->first();
         if (!$language) {
@@ -89,33 +95,33 @@ class SiteController extends Controller {
         session()->put('lang', $lang);
         return back();
     }
-
+ 
     public function playVideo($id = 0, $slug = null) {
-
+ 
         $videos = Video::published()->public()->where('is_shorts_video', Status::NO)->with('videoFiles', 'user');
-
+ 
         $video = (clone $videos)->where('id', $id)->whereHas('user', function ($query) {
             $query->active();
         })->with(['userReactions', 'subtitles', 'adPlayDurations', 'comments' => function ($query) {
             $query->with('user', 'replies.user')->latest()->take(20);
         }])->firstOrFail();
-
+ 
         $seoContents = $video->description;
-
+ 
         $seoImage = $video->thumb_image ? getImage(getFilePath('thumbnail') . '/' . $video->thumb_image) : null;
-
+ 
         $pageTitle    = $video->title;
         $adsDurations = $video->adsDurations();
-
+ 
         $categories = Category::active()->withCount('videos')->orderBy('videos_count', 'desc')->get();
         $comments   = $video->comments;
-
+ 
         $videoTags = $video->tags->pluck('tag')->toArray();
-
+ 
         $relatedPlaylistVideos = [];
-
+ 
         $palyPlaylist = [];
-
+ 
         $relatedVideos = (clone $videos)->where('id', '!=', $video->id)
             ->where(function ($query) use ($video, $videoTags) {
                 $query->where('category_id', $video->category_id)->orWhere(function ($query) use ($videoTags) {
@@ -127,17 +133,17 @@ class SiteController extends Controller {
             ->inRandomOrder()
             ->take(20)
             ->get();
-
+ 
         if ($relatedVideos->isEmpty()) {
             $relatedVideos = (clone $videos)->where('id', '!=', $video->id)->latest()->take(10)->get();
         }
-
+ 
         $this->viewsHistory($video);
-
+ 
         $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
             $gate->where('status', Status::ENABLE);
         })->with('method')->orderby('name')->get();
-
+ 
         $purchasedTrue = true;
         $watchLater    = false;
         $playlists     = [];
@@ -162,110 +168,110 @@ class SiteController extends Controller {
         $isPurchased = false;
         if (request()->list) {
             $palyPlaylist = Playlist::public()->with('videos')->where('slug', request()->list)->first();
-
+ 
             $isPurchased = true;
             if (@$palyPlaylist->playlist_subscription) {
                 $isPurchased = false;
             }
-
+ 
             if (auth()->check()) {
                 if (@$palyPlaylist->playlist_subscription && in_array($palyPlaylist->id, $user->purchasedPlaylistId)) {
                     $isPurchased = true;
-
+ 
                     $videoInRequestedPlaylist = $palyPlaylist->videos()
                         ->where('videos.id', $video->id)
                         ->exists();
-
+ 
                     if ($videoInRequestedPlaylist) {
                         $purchasedTrue = true;
                     }
                 }
             }
-
+ 
             if ($palyPlaylist) {
                 $relatedPlaylistVideos = @$palyPlaylist->videos()->public()->regular()->get();
             }
-
+ 
             if (request()->plan) {
                 $plan          = Plan::where('slug', request()->plan)->firstOrFail();
                 $purchasedTrue = false;
-
+ 
                 if (auth()->check()) {
                     $purchasedTrue = $user->hasValidPlan($plan->id);
                 } else {
                     return to_route('user.login');
                 }
-
+ 
                 $planPlaylists = $plan->playlists()->with('videos')->get();
             }
         } else if (request()->plan) {
             $plan          = Plan::where('slug', request()->plan)->firstOrFail();
             $palyPlaylist  = $plan;
             $purchasedTrue = false;
-
+ 
             if (auth()->check()) {
                 $purchasedTrue = $user->hasValidPlan($plan->id);
             } else {
                 return to_route('user.login');
             }
-
+ 
             $relatedPlaylistVideos = @$plan->videos()->get();
             $planPlaylists         = $plan->playlists()->with('videos')->get();
         }
-
+ 
         return view('Template::play_video', compact('pageTitle', 'seoContents', 'seoImage', 'plan', 'planPlaylists', 'isPurchased', 'playlists', 'video', 'gatewayCurrency', 'relatedVideos', 'categories', 'purchasedTrue', 'watchLater', 'comments', 'adsDurations', 'relatedPlaylistVideos', 'palyPlaylist'));
     }
-
+ 
     public function shortPlayVideo($id = 0, $slug = null) {
         $pageTitle = 'Short Video';
         $short     = Video::published()
             ->public()
-            ->with('comments.replies', 'comments.user', 'comments.userReactions')
+            ->with('comments.replies', 'comments.user', 'comments.userReactions', 'subtitles')
             ->where('is_shorts_video', Status::YES)
             ->where('id', $id)
             ->firstOrFail();
-
+ 
         $this->viewsHistory($short);
-
+ 
         $relatedVideosQuery = Video::published()
             ->public()
-            ->with('comments.replies', 'comments.user', 'comments.userReactions')
+            ->with('comments.replies', 'comments.user', 'comments.userReactions', 'subtitles')
             ->where('id', '!=', $short->id)
             ->where('is_shorts_video', Status::YES)
             ->latest();
-
+ 
         $relatedVideos = $relatedVideosQuery->paginate(getPaginate());
-
+ 
         return view('Template::shorts_play', compact('pageTitle', 'short', 'relatedVideos'));
     }
-
+ 
     private function viewsHistory($video) {
         $playedVideosJson = session()->get('played_videos', '[]');
         $playedVideos     = json_decode($playedVideosJson, true);
         $playVideo        = (object) (@$playedVideos[$video->id] ?? []);
-
+ 
         if (@$playVideo->exp <= now()) {
             $expiration               = Carbon::now()->addMinutes(20);
             $playedVideos[$video->id] = [
                 'id'  => $video->id,
                 'exp' => $expiration->toDateTimeString(),
             ];
-
+ 
             session()->put('played_videos', json_encode($playedVideos));
             $video->views += 1;
             $video->save();
-
+ 
             $impression           = new Impression();
             $impression->user_id  = $video->user_id;
             $impression->video_id = $video->id;
             $impression->save();
         }
     }
-
+ 
     public function cookieAccept() {
         Cookie::queue('gdpr_cookie', gs('site_name'), 43200);
     }
-
+ 
     public function cookiePolicy() {
         $cookieContent = Frontend::where('data_keys', 'cookie.data')->first();
         abort_if($cookieContent->data_values->status != Status::ENABLE, 404);
@@ -273,7 +279,7 @@ class SiteController extends Controller {
         $cookie    = Frontend::where('data_keys', 'cookie.data')->first();
         return view('Template::cookie', compact('pageTitle', 'cookie'));
     }
-
+ 
     public function placeholderImage($size = null) {
         $imgWidth  = explode('x', $size)[0];
         $imgHeight = explode('x', $size)[1];
@@ -286,7 +292,7 @@ class SiteController extends Controller {
         if ($imgHeight < 100 && $fontSize > 30) {
             $fontSize = 30;
         }
-
+ 
         $image     = imagecreatetruecolor($imgWidth, $imgHeight);
         $colorFill = imagecolorallocate($image, 100, 100, 100);
         $bgFill    = imagecolorallocate($image, 255, 255, 255);
@@ -301,7 +307,7 @@ class SiteController extends Controller {
         imagejpeg($image);
         imagedestroy($image);
     }
-
+ 
     public function maintenance() {
         $pageTitle = 'Maintenance Mode';
         if (gs('maintenance_mode') == Status::DISABLE) {
@@ -310,7 +316,7 @@ class SiteController extends Controller {
         $maintenance = Frontend::where('data_keys', 'maintenance.data')->first();
         return view('Template::maintenance', compact('pageTitle', 'maintenance'));
     }
-
+ 
     public function getVideos($id = null) {
         // Optimize: Select only needed columns and eager load relationships efficiently
         $query = Video::published()->public()->withoutOnlyPlaylist()->latest()
@@ -319,21 +325,21 @@ class SiteController extends Controller {
             ->whereHas('user', function ($q) {
                 $q->active();
             })->regular();
-
+ 
         if (request()->trending) {
             $query->whereDate('created_at', '>=', now()->subDays(7))->orWhere('is_trending', Status::YES);
         }
-
+ 
         if (request()->category_id) {
             $query->where('category_id', request()->category_id);
         }
-
+ 
         if ($id) {
             $query->where('user_id', $id);
         }
-
+ 
         $videos = $query->orderBy('id', 'desc')->paginate(getPaginate());
-
+ 
         // Optimize: Batch check purchased videos for all videos at once instead of per video
         $purchasedVideoIds = [];
         if (auth()->check()) {
@@ -344,14 +350,14 @@ class SiteController extends Controller {
                 ->pluck('video_id')
                 ->toArray();
         }
-
+ 
         $videos->getCollection()->transform(function ($video) use ($purchasedVideoIds) {
             $video->purchased_true = in_array($video->id, $purchasedVideoIds);
             return $video;
         });
-
+ 
         $html = view('Template::partials.video.video_list', compact('videos'))->render();
-
+ 
         return response()->json([
             'status' => 'success',
             'data'   => [
@@ -362,19 +368,19 @@ class SiteController extends Controller {
             ],
         ]);
     }
-
+ 
     public function loadShorts($id = null) {
         $query = Video::published()->public()->whereHas('user', function ($query) {
             $query->active();
         })->latest()->with('user');
-
+ 
         if ($id) {
             $query->where('user_id', $id);
         }
         $shortVideos = $query->shorts()->paginate(getPaginate());
-
+ 
         if (request()->play_short) {
-
+ 
             $html = view('Template::partials.video.load_shorts', compact('shortVideos'))->render();
             return response()->json([
                 'status' => 'success',
@@ -385,9 +391,9 @@ class SiteController extends Controller {
                 ],
             ]);
         } else {
-
+ 
             $html = view('Template::partials.video.shorts_list', compact('shortVideos'))->render();
-
+ 
             return response()->json([
                 'status' => 'success',
                 'data'   => [
@@ -399,12 +405,12 @@ class SiteController extends Controller {
             ]);
         }
     }
-
+ 
     public function getAllVideos($id = null) {
         return $this->getVideos(false, $id);
     }
-
-
+ 
+ 
     public function categoryVideo($slug) {
         if ($slug == 'all') {
             $pageTitle = 'All Videos';
@@ -422,25 +428,25 @@ class SiteController extends Controller {
                 ->with('videoFiles')
                 ->orderBy('id', 'desc')
                 ->paginate(getPaginate());
-
+ 
             return view('Template::category_videos', compact('videos', 'pageTitle', 'category'));
         }
     }
-
+ 
     public function fetchAd() {
         $id    = decrypt(request()->video_id);
         $video = Video::published()->whereHas('user', function ($query) {
             $query->active();
         })->regular()->find($id);
-
+ 
         if (!$video) {
             return response()->json(['error' => 'Video not found']);
         }
-
+ 
         if ($video->user->monetization_status != Status::MONETIZATION_APPROVED) {
             return response()->json(['error' => 'The video not available for ads showing']);
         }
-
+ 
         $ad = Advertisement::where('status', Status::ENABLE)
             ->whereHas('categories', function ($query) use ($video) {
                 $query->active()->where('category_id', $video->category_id);
@@ -463,17 +469,17 @@ class SiteController extends Controller {
             })
             ->inRandomOrder()
             ->first();
-
+ 
         if ($ad) {
             if ($ad->ad_type == Status::IMPRESSION || $ad->ad_type == Status::BOTH) {
-
+ 
                 $ad->available_impression -= 1;
                 $ad->save();
-
+ 
                 $videoOwner = $video->user;
                 $videoOwner->balance += gs('per_impression_earn');
                 $videoOwner->save();
-
+ 
                 $transaction               = new Transaction();
                 $transaction->user_id      = $videoOwner->id;
                 $transaction->video_id     = $video->id;
@@ -485,13 +491,13 @@ class SiteController extends Controller {
                 $transaction->trx          = getTrx();
                 $transaction->remark       = 'ads_revenue';
                 $transaction->save();
-
+ 
                 $adAnalysis                   = new AdvertisementAnalytics();
                 $adAnalysis->video_id         = $video->id;
                 $adAnalysis->advertisement_id = $ad->id;
                 $adAnalysis->impression       = Status::YES;
                 $adAnalysis->save();
-
+ 
                 $userNotification            = new UserNotification();
                 $userNotification->user_id   = $videoOwner->id;
                 $userNotification->title     = 'Ads revenue add to your balance';
@@ -502,7 +508,7 @@ class SiteController extends Controller {
             if ($ad->ad_type == Status::CLICK) {
                 $action = route('redirect.ad', ['id' => encrypt($ad->id), 'video_id' => encrypt($video->id)]);
             }
-
+ 
             return response()->json([
                 'status' => 'success',
                 'data'   => [
@@ -520,17 +526,17 @@ class SiteController extends Controller {
             return response()->json(['error' => 'No available ad']);
         }
     }
-
+ 
     public function redirectAd($id, $video_id) {
         $videoId = decrypt($video_id);
         $video   = Video::where('id', $videoId)->published()->public()->whereHas('user', function ($query) {
             $query->active();
         })->regular()->firstOrFail();
-
+ 
         if ($video->user->monetization_status != Status::MONETIZATION_APPROVED) {
             return response()->json(['error' => 'The video not available for ads showing']);
         }
-
+ 
         $ad = Advertisement::where('available_click', '>', 0)
             ->where('status', Status::RUNNING)
             ->where('user_id', '!=', $video->user_id)
@@ -542,20 +548,20 @@ class SiteController extends Controller {
                 $query->orWhere('ad_type', Status::BOTH);
             })
             ->findOrFail($id);
-
+ 
         $ad->available_click -= 1;
         $ad->save();
-
+ 
         $adAnalysis                   = new AdvertisementAnalytics();
         $adAnalysis->video_id         = $video->id;
         $adAnalysis->advertisement_id = $ad->id;
         $adAnalysis->click            = Status::YES;
         $adAnalysis->save();
-
+ 
         $videoOwner = $video->user;
         $videoOwner->balance += gs('per_click_earn');
         $videoOwner->save();
-
+ 
         $transaction               = new Transaction();
         $transaction->user_id      = $videoOwner->id;
         $transaction->video_id     = $video->id;
@@ -567,7 +573,7 @@ class SiteController extends Controller {
         $transaction->trx          = getTrx();
         $transaction->remark       = 'ads_revenue';
         $transaction->save();
-
+ 
         $userNotification            = new UserNotification();
         $userNotification->user_id   = $videoOwner->id;
         $userNotification->title     = 'Ads revenue add to your balance';
@@ -575,17 +581,17 @@ class SiteController extends Controller {
         $userNotification->save();
         return redirect($ad->url);
     }
-
+ 
     public function embedVideo($id = 0, $slug = null) {
         $video = Video::where('id', $id)->with('videoFiles', 'subTitles')->published()->free()->public()->whereHas('user', function ($query) {
             $query->active();
         })->regular()->firstOrFail();
         return view('Template::embed_video', compact('video'));
     }
-
+ 
     public function trendingList() {
         $pageTitle = 'Trending Videos';
-
+ 
         $trendingVideos = Video::published()
             ->public()
             ->regular()
@@ -599,9 +605,9 @@ class SiteController extends Controller {
             ->paginate(getPaginate());
         return view('Template::trending_list', compact('trendingVideos', 'pageTitle'));
     }
-
+ 
     public function shortView($id) {
-
+ 
         $short = Video::published()
             ->public()
             ->whereHas('user', function ($query) {
@@ -610,22 +616,22 @@ class SiteController extends Controller {
             ->with('comments.replies', 'comments.user', 'comments.userReactions')
             ->where('is_shorts_video', Status::YES)
             ->find($id);
-
+ 
         if (!$short) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Video not found',
             ]);
         }
-
+ 
         $this->viewsHistory($short);
-
+ 
         return response()->json([
             'status'  => 'success',
             'message' => 'Views save successfully',
         ]);
     }
-
+ 
     public function getVideoSource($id) {
         // Build the query with necessary conditions
         $query = Video::with('videoFiles', 'storage')
@@ -636,71 +642,71 @@ class SiteController extends Controller {
             })
             ->regular()
             ->published();
-
+ 
         if (auth()->check() && $query->first()->user_id != auth()->id()) {
             $query->free();
         }
-
+ 
         $video = $query->first();
-
+ 
         if (!$video) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Video not found',
             ]);
         }
-
+ 
         $file    = $video->videoFiles()->first();
         $path    = getVideo($file->file_name, $video);
         $quality = $file->quality;
-
+ 
         return response()->json([
             'status'  => 'success',
             'path'    => $path,
             'quality' => $quality,
         ]);
     }
-
+ 
     public function videoPath($id = 0) {
         $id = decrypt($id);
-
+ 
         $videoFile = VideoFile::with('video')->findOrFail($id);
         $video     = $videoFile->video;
-
+ 
         if (!$this->canAccessVideo($video)) {
             return null;
         }
-
+ 
         return $this->streamVideo($videoFile->file_name, $video->storage_id, $video);
     }
-
+ 
     public function shortsPath($id) {
         $id = decrypt($id);
-
+ 
         $short = Video::where('id', $id)
             ->where('is_shorts_video', Status::YES)
             ->firstOrFail();
-
+ 
         return $this->streamVideo($short->video, $short->storage_id, $short);
     }
-
+ 
     private function canAccessVideo($video): bool {
         return $video->showEligible();
     }
-
+ 
     private function streamVideo($fileName, $storageId, $video) {
         if ($storageId == 0) {
             $filePath = 'assets/videos/' . $fileName;
-
+ 
             if (!file_exists($filePath)) {
                 abort(404);
             }
-
+ 
             $size   = filesize($filePath);
             $start  = 0;
             $end    = $size - 1;
             $length = $size;
-
+ 
             $headers = [
                 'Content-Type'  => 'application/octet-stream',
                 'Accept-Ranges' => 'bytes',
@@ -708,7 +714,7 @@ class SiteController extends Controller {
                 'Pragma'        => 'no-cache',
                 'Expires'       => '0',
             ];
-
+ 
             if (request()->headers->has('Range')) {
                 preg_match('/bytes=(\d+)-(\d*)/', request()->header('Range'), $matches);
                 $start = intval($matches[1]);
@@ -716,7 +722,7 @@ class SiteController extends Controller {
                     $end = intval($matches[2]);
                 }
                 $length = $end - $start + 1;
-
+ 
                 $headers['Content-Range']  = "bytes $start-$end/$size";
                 $headers['Content-Length'] = $length;
                 $status                    = 206;
@@ -724,25 +730,25 @@ class SiteController extends Controller {
                 $headers['Content-Length'] = $size;
                 $status                    = 200;
             }
-
+ 
             $stream = function () use ($filePath, $start, $length) {
                 $handle = fopen($filePath, 'rb');
                 fseek($handle, $start);
                 $bufferSize = 8192;
-
+ 
                 while (!feof($handle) && $length > 0) {
                     $readLength = min($bufferSize, $length);
                     echo fread($handle, $readLength);
                     flush();
                     $length -= $readLength;
                 }
-
+ 
                 fclose($handle);
             };
-
+ 
             return response()->stream($stream, $status, $headers);
         }
-
+ 
         return redirect()->away(getVideo($fileName, $video));
     }
 }

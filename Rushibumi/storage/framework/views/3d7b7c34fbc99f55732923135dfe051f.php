@@ -39,6 +39,13 @@
             </div>
         </li>
 
+        <li class="dashboard-menu__item">
+            <a href="<?php echo e(route('user.live.manage')); ?>" class="dashboard-menu__link <?php echo e(menuActive(['user.live.manage', 'user.live.go.live'])); ?>">
+                <span class="icon"><i class="las la-broadcast-tower"></i></span>
+                <span class="text"><?php echo app('translator')->get('Live Streams'); ?></span>
+            </a>
+        </li>
+
 
 
         <?php if(auth()->user()->monetization_status == Status::YES): ?>

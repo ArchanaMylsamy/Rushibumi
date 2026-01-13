@@ -108,6 +108,14 @@ class FileInfo {
             'size'  => '1250x700',
             'thumb' => '365x215',
         ];
+        $data['liveThumbnail'] = [
+            'path'  => 'assets/images/live_thumbnail',
+            'size'  => '1280x720',
+            'thumb' => '365x215',
+        ];
+        $data['liveRecording'] = [
+            'path'  => 'assets/videos/live_recordings',
+        ];
         return $data;
     }
 

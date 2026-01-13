@@ -103,6 +103,35 @@ trait ChannelManager {
         return view('Template::user.channel.channel_preview', compact('pageTitle', 'videosCount', 'subscriberCount', 'gatewayCurrency', 'playlists', 'bladeName', 'user'));
     }
 
+    public function live($slug = null) {
+        if ($slug) {
+            $user = User::where('profile_complete', Status::YES)->active()->where('slug', $slug)->firstOrFail();
+        } else {
+            $user = auth()->user();
+        }
+        
+        if ($user->profile_complete == Status::NO) {
+            return to_route('user.channel.create');
+        }
+
+        $subscriberCount = $user->subscribers()->count();
+        $videosCount     = $user->videos()->published()->count();
+        
+        // Get live streams
+        $liveStreams = \App\Models\LiveStream::where('user_id', $user->id)
+            ->where(function($query) use ($user) {
+                if ($user->id != auth()->id()) {
+                    $query->where('visibility', 'public');
+                }
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(getPaginate());
+
+        $bladeName = 'live';
+        $pageTitle = 'Live Streams';
+        return view('Template::user.channel.channel_preview', compact('pageTitle', 'videosCount', 'subscriberCount', 'bladeName', 'user', 'liveStreams'));
+    }
+
     public function about($slug = null) {
         if ($slug) {
             $user = User::where('profile_complete', Status::YES)->active()->where('slug', $slug)->firstOrFail();

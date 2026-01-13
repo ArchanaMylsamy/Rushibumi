@@ -104,6 +104,13 @@
                             </a>
                         </li>
 
+                        <li class="create__list-item">
+                            <a class="create__list-link" href="<?php echo e(route('user.live.go.live')); ?>">
+                                <span class="icon four"><i class="las la-video"></i></span>
+                                <span class="text"><?php echo app('translator')->get('Go live'); ?></span>
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
                 <button class="btn btn--base manageCreate create__btn ">
