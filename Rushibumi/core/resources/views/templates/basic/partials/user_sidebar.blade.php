@@ -39,6 +39,13 @@
             </div>
         </li>
 
+        <li class="dashboard-menu__item">
+            <a href="{{ route('user.live.manage') }}" class="dashboard-menu__link {{ menuActive(['user.live.manage', 'user.live.go.live']) }}">
+                <span class="icon"><i class="las la-broadcast-tower"></i></span>
+                <span class="text">@lang('Live Streams')</span>
+            </a>
+        </li>
+
 
 
         @if (auth()->user()->monetization_status == Status::YES)

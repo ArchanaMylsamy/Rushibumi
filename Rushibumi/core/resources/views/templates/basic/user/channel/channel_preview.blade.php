@@ -128,6 +128,8 @@
                href="{{ route('preview.playlist', $user->slug) }}">@lang('Playlists')</a>
             <a class="channel-tab__item {{ menuActive('preview.shorts') }} "
                href="{{ route('preview.shorts', $user->slug) }}">@lang('Shorts')</a>
+            <a class="channel-tab__item {{ menuActive('preview.live') }}"
+               href="{{ route('preview.live', $user->slug) }}">@lang('Live')</a>
             <a class="channel-tab__item {{ menuActive('preview.about') }}"
                href="{{ route('preview.about', $user->slug) }}">@lang('About')</a>
             @if (gs('is_monthly_subscription') && (!auth()->check() || $user->id != auth()->id()))

@@ -290,6 +290,23 @@ Route::middleware('auth')
                     });
             });
 
+            // Live Stream Routes (Outside User namespace to avoid namespace conflict)
+            Route::middleware('check.status')->group(function () {
+                Route::controller(\App\Http\Controllers\LiveStreamController::class)
+                    ->prefix('live')
+                    ->name('live.')
+                    ->group(function () {
+                        Route::get('go-live', 'goLive')->name('go.live');
+                        Route::post('start', 'startStream')->name('start');
+                        Route::post('stop/{id}', 'stopStream')->name('stop');
+                        Route::post('upload-chunk/{id}', 'uploadRecordingChunk')->name('upload.chunk');
+                        Route::get('manage', 'manage')->name('manage');
+                        Route::get('get-stream-details/{id}', 'getStreamDetails')->name('get.stream.details');
+                        Route::post('update-stream/{id}', 'updateStream')->name('update.stream');
+                        Route::post('delete/{id}', 'delete')->name('delete');
+                    });
+            });
+
             // Payment
             Route::prefix('deposit')
                 ->name('deposit.')

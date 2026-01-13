@@ -11,34 +11,40 @@
                 </button>
             </div>
             <div class="modal-body">
+                <?php
+                    // Use live watch route if it's a live stream, otherwise use video play route
+                    $watchUrl = isset($watchRoute) ? $watchRoute : route('video.play', [$video->id, $video->slug]);
+                ?>
                 <div class="share-items">
                     <a class="share-item whatsapp"
-                        href="https://api.whatsapp.com/send?text=<?php echo e(route('video.play', [$video->id, $video->slug])); ?>"
+                        href="https://api.whatsapp.com/send?text=<?php echo e($watchUrl); ?>"
                         target="_blank">
                         <i class="lab la-whatsapp"></i>
                     </a>
                     <a class="share-item facebook"
-                        href="https://www.facebook.com/sharer/sharer.php?u=<?php echo e(route('video.play', [$video->id, $video->slug])); ?>"
+                        href="https://www.facebook.com/sharer/sharer.php?u=<?php echo e($watchUrl); ?>"
                         target="_blank">
                         <i class="lab la-facebook-f"></i>
                     </a>
 
                     <a class="share-item twitter"
-                        href="https://twitter.com/intent/tweet?url=<?php echo e(route('video.play', [$video->id, $video->slug])); ?>&text=<?php echo e($video->title); ?>"
+                        href="https://twitter.com/intent/tweet?url=<?php echo e($watchUrl); ?>&text=<?php echo e($video->title); ?>"
                         target="_blank">
                         <i class="fa-brands fa-x-twitter"></i>
                     </a>
                     <a class="share-item envelope"
-                        href="mailto:?subject=<?php echo e($video->title); ?>&body=<?php echo e(route('video.play', [$video->id, $video->slug])); ?>">
+                        href="mailto:?subject=<?php echo e($video->title); ?>&body=<?php echo e($watchUrl); ?>">
                         <i class="las la-envelope"></i>
                     </a>
-                    <a class="share-item embed" href="javascript:void(0)" data-embed-code="<?php echo e(htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>')); ?>">
-                        <i class="las la-code"></i>
-                    </a>
+                    <?php if(!isset($isLiveStream) || !$isLiveStream): ?>
+                        <a class="share-item embed" href="javascript:void(0)" data-embed-code="<?php echo e(htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>')); ?>">
+                            <i class="las la-code"></i>
+                        </a>
+                    <?php endif; ?>
                 </div>
                 <div class="share-embed">
                     <input class="form--control copyText" type="text"
-                        value="<?php echo e(route('video.play', [$video->id, $video->slug])); ?>">
+                        value="<?php echo e($watchUrl); ?>">
                     <button class="share-embed-btn copyBtn"><?php echo app('translator')->get('Copy'); ?></button>
                 </div>
                 <div class="share-embed embed-code-section" style="display: none; margin-top: 15px;">
@@ -71,7 +77,7 @@
                             <label class="check-type mb-2 w-100" for="flexCheck<?php echo e($playlist->id); ?>">
                                 <input class="check-type-input" id="flexCheck<?php echo e($playlist->id); ?>" name="playlist_id[]"
                                     type="checkbox" value="<?php echo e($playlist->id); ?>"
-                                    <?php if(in_array($playlist->id, $video->playlists->pluck('id')->toArray())): ?> checked <?php endif; ?>>
+                                    <?php if(isset($video->playlists) && $video->playlists->count() > 0 && in_array($playlist->id, $video->playlists->pluck('id')->toArray())): ?> checked <?php endif; ?>>
                                 <span class="check-type-icon">
                                     <svg class="check-circle" width="13" height="10" viewBox="0 0 13 10"
                                         fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -170,7 +176,7 @@
                         </div>
                         <div class="col-lg-6">
                             <input class="form-control form--control amount" name="amount" type="hidden"
-                                value="<?php echo e(getAmount($video->price)); ?>" placeholder="<?php echo app('translator')->get('00.00'); ?>" readonly
+                                value="<?php echo e(getAmount($video->price ?? 0)); ?>" placeholder="<?php echo app('translator')->get('00.00'); ?>" readonly
                                 autocomplete="off">
                             <div class="payment-system-list border-style">
                                 <div class="deposit-info">

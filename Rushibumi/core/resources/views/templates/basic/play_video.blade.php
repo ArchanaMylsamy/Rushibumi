@@ -26,10 +26,10 @@
                                     
                             @endforeach
 
-                            @foreach ($video->subtitles as $subtitle)
-                                <track src="{{ getImage(getFilePath('subtitle') . '/' . $subtitle->file) }}"
+                            @foreach ($video->subtitles as $index => $subtitle)
+                                <track src="{{ asset(getFilePath('subtitle') . '/' . $subtitle->file) }}"
                                     srclang="{{ $subtitle->language_code }}" kind="captions"
-                                    label="{{ $subtitle->caption }}" default />
+                                    label="{{ $subtitle->caption }}" @if($index === 0) default @endif />
                             @endforeach
                         @endif
                     </video>
@@ -122,6 +122,15 @@
                                 </span>
                                 <span class="text">@lang('Share')</span>
                             </button>
+
+                            @if ($video->subtitles->count() > 0)
+                                <button class="meta-buttons__button transcriptBtn" data-video_id="{{ $video->id }}" data-subtitles="{{ $video->subtitles->map(function($subtitle) { return ['id' => $subtitle->id, 'caption' => $subtitle->caption, 'language_code' => $subtitle->language_code, 'file_url' => asset(getFilePath('subtitle') . '/' . $subtitle->file)]; })->toJson() }}">
+                                    <span class="icon">
+                                        <i class="fa-solid fa-closed-captioning"></i>
+                                    </span>
+                                    <span class="text">@lang('Transcript')</span>
+                                </button>
+                            @endif
 
 
                             @auth
@@ -497,6 +506,26 @@
         </div>
     </div>
 
+    {{-- Transcript Panel --}}
+    <div class="transcript-box">
+        <div class="transcript-box__header">
+            <h5 class="transcript-box__title">@lang('Transcript')</h5>
+            <button class="transcript-box__close-icon">
+                <i class="las la-times"></i>
+            </button>
+        </div>
+        <div class="transcript-box__content">
+            <div class="transcript-language-selector" style="padding: 15px 20px; border-bottom: 1px solid hsl(var(--white)/.1);">
+                <label style="color: hsl(var(--white)); margin-right: 10px; display: inline-block; vertical-align: middle;">@lang('Language'):</label>
+                <select class="form--control transcript-language-select" style="display: inline-block; width: auto; min-width: 200px; vertical-align: middle;">
+                    <option value="">@lang('Select Language')</option>
+                </select>
+            </div>
+            <div class="transcript-text-content" style="padding: 20px; overflow-y: auto; flex: 1;">
+                <p style="color: hsl(var(--body-color)); text-align: center;">@lang('Select a language to view transcript')</p>
+            </div>
+        </div>
+    </div>
 
     {{-- all modal --}}
   
@@ -691,6 +720,357 @@
            right: 50px;
            bottom: 10px;
        }
+
+       /* Transcript box styles for regular video player */
+       .transcript-box {
+           position: fixed;
+           width: 400px;
+           right: -420px;
+           top: 50%;
+           transform: translateY(-50%);
+           height: 70vh;
+           max-height: 600px;
+           background-color: hsl(var(--bg-color));
+           visibility: hidden;
+           opacity: 0;
+           transition: all 0.3s linear;
+           z-index: 9999;
+           overflow-y: hidden;
+           border: 1px solid hsl(var(--white)/.1);
+           border-radius: 8px;
+           display: flex;
+           flex-direction: column;
+           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+       }
+
+       .transcript-box.show-transcript {
+           visibility: visible;
+           opacity: 1;
+           right: 20px;
+       }
+
+       @media (max-width: 991px) {
+           .transcript-box {
+               width: 100%;
+               height: 100vh;
+               max-height: 100vh;
+               right: -100%;
+               top: 0;
+               transform: none;
+               border-radius: 0;
+           }
+
+           .transcript-box.show-transcript {
+               right: 0;
+           }
+       }
+
+       .transcript-box__header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           margin-bottom: 0;
+           padding: 20px;
+           padding-bottom: 0;
+           flex-shrink: 0;
+           border-bottom: 1px solid hsl(var(--white)/.1);
+       }
+
+       .transcript-box__title {
+           margin-bottom: 0;
+           color: hsl(var(--white));
+           font-size: 18px;
+           font-weight: 600;
+       }
+
+       .transcript-box__close-icon {
+           color: hsl(var(--white));
+           background: transparent;
+           border: none;
+           cursor: pointer;
+           font-size: 20px;
+           padding: 5px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+       }
+
+       .transcript-box__close-icon:hover {
+           color: hsl(var(--base));
+       }
+
+       .transcript-box__content {
+           display: flex;
+           flex-direction: column;
+           flex: 1;
+           overflow: hidden;
+       }
+
+       .transcript-text-content {
+           flex: 1;
+           overflow-y: auto;
+           padding: 20px;
+           color: hsl(var(--white));
+           line-height: 1.6;
+       }
+
+       .transcript-text-content::-webkit-scrollbar {
+           width: 5px;
+       }
+
+       .transcript-text-content::-webkit-scrollbar-thumb {
+           background: hsl(var(--white) / .2);
+           border-radius: 10px;
+       }
+
+       .transcript-text-content::-webkit-scrollbar-track {
+           background: transparent;
+       }
+
+       .transcript-text-content .transcript-cue {
+           margin-bottom: 12px;
+           padding: 8px;
+           border-radius: 4px;
+           transition: background-color 0.2s;
+           cursor: pointer;
+       }
+
+       .transcript-text-content .transcript-cue:hover {
+           background-color: hsl(var(--white) / .1);
+       }
+
+       .transcript-text-content .transcript-cue.active {
+           background-color: hsl(var(--base) / .3);
+       }
+
+       .transcript-text-content .transcript-time {
+           color: hsl(var(--body-color));
+           font-size: 12px;
+           margin-right: 8px;
+           font-weight: 500;
+       }
+
+       .transcript-language-selector {
+           flex-shrink: 0;
+           position: relative;
+           z-index: 10;
+       }
+
+       /* Override all global select styles for transcript dropdown */
+       .transcript-language-select {
+           padding: 10px 35px 10px 15px !important;
+           border-radius: 6px !important;
+           font-size: 14px !important;
+           cursor: pointer !important;
+           z-index: 1000 !important;
+           position: relative !important;
+           min-width: 200px !important;
+           width: auto !important;
+           display: inline-block !important;
+           visibility: visible !important;
+           opacity: 1 !important;
+           /* Remove ALL arrows - override global styles */
+           -webkit-appearance: none !important;
+           -moz-appearance: none !important;
+           appearance: none !important;
+           -ms-expand: none !important;
+           /* Remove any background images from global CSS */
+           background-image: none !important;
+           background-repeat: no-repeat !important;
+           background-position: right 12px center !important;
+           background-size: 12px 12px !important;
+       }
+
+       /* Remove any pseudo-element arrows from global CSS */
+       .transcript-language-select::before,
+       .transcript-language-select::after {
+           display: none !important;
+           content: none !important;
+       }
+
+       /* Remove arrows from parent elements */
+       .transcript-language-selector::before,
+       .transcript-language-selector::after {
+           display: none !important;
+           content: none !important;
+       }
+
+       /* Dark theme styles - dark background */
+       [data-theme="dark"] .transcript-language-select {
+           background: hsl(var(--bg-color)) !important;
+           color: hsl(var(--white)) !important;
+           border: 1px solid hsl(var(--white) / 0.2) !important;
+           background-image: none !important;
+       }
+
+       /* Light theme styles - white background */
+       [data-theme="light"] .transcript-language-select {
+           background: #ffffff !important;
+           color: hsl(var(--text-color)) !important;
+           border: 1px solid hsl(var(--border-color)) !important;
+           background-image: none !important;
+       }
+
+       .transcript-language-select option {
+           padding: 10px 15px !important;
+           display: block !important;
+           visibility: visible !important;
+       }
+
+       /* Dark theme option styles - dark background */
+       [data-theme="dark"] .transcript-language-select option {
+           background: hsl(var(--bg-color)) !important;
+           color: hsl(var(--white)) !important;
+       }
+
+       /* Light theme option styles - white background */
+       [data-theme="light"] .transcript-language-select option {
+           background: #ffffff !important;
+           color: hsl(var(--text-color)) !important;
+       }
+
+       /* Dark theme focus */
+       [data-theme="dark"] .transcript-language-select:focus {
+           outline: 2px solid hsl(var(--base)) !important;
+           outline-offset: 2px !important;
+           border-color: hsl(var(--base)) !important;
+           background-color: hsl(var(--bg-color)) !important;
+           background-image: none !important;
+       }
+
+       /* Light theme focus */
+       [data-theme="light"] .transcript-language-select:focus {
+           outline: 2px solid hsl(var(--base)) !important;
+           outline-offset: 2px !important;
+           border-color: hsl(var(--base)) !important;
+           background-color: #ffffff !important;
+           background-image: none !important;
+       }
+
+       .transcript-language-select:hover {
+           border-color: hsl(var(--base)) !important;
+       }
+
+       /* Remove black background from related video players */
+       .related-video-player,
+       .related-video-player video,
+       .video-item__thumb .related-video-player,
+       .video-item__thumb .related-video-player video,
+       .secondary__playlist .related-video-player,
+       .secondary__playlist .related-video-player video {
+           background: transparent !important;
+           background-color: transparent !important;
+       }
+
+       /* Remove background from Plyr wrapper for related videos */
+       .video-item__thumb .plyr,
+       .video-item__thumb .plyr--video,
+       .video-item__thumb .plyr__video-wrapper,
+       .secondary__playlist .plyr,
+       .secondary__playlist .plyr--video,
+       .secondary__playlist .plyr__video-wrapper {
+           background: transparent !important;
+           background-color: transparent !important;
+       }
+
+       /* Ensure video element itself has no background */
+       .video-item__thumb video.related-video-player {
+           background: transparent !important;
+           background-color: transparent !important;
+       }
+
+       /* Remove border radius from related video thumbnails - make them square */
+       .secondary__playlist .video-item__thumb,
+       .secondary__playlist .video-item__thumb img,
+       .secondary__playlist .video-item__thumb video,
+       .secondary__playlist .video-item__thumb .related-video-player,
+       .secondary__playlist .video-item__thumb .plyr,
+       .secondary__playlist .video-item__thumb .plyr--video,
+       .secondary__playlist .video-item__thumb .plyr__video-wrapper {
+           border-radius: 0 !important;
+       }
+
+       /* Fix thumbnail fitting - ensure video/image fills container completely */
+       .secondary__playlist .video-item__thumb,
+       .play-video .secondary__playlist .video-item__thumb {
+           position: relative !important;
+           overflow: hidden !important;
+           display: block !important;
+           background: transparent !important;
+           background-color: transparent !important;
+       }
+
+       /* Remove any transforms or positioning that might shift content */
+       .secondary__playlist .video-item__thumb video,
+       .secondary__playlist .video-item__thumb .related-video-player,
+       .secondary__playlist .video-item__thumb .video-player,
+       .secondary__playlist .video-item__thumb img,
+       .play-video .secondary__playlist .video-item__thumb video,
+       .play-video .secondary__playlist .video-item__thumb .related-video-player,
+       .play-video .secondary__playlist .video-item__thumb .video-player,
+       .play-video .secondary__playlist .video-item__thumb img {
+           position: absolute !important;
+           top: 0 !important;
+           left: 0 !important;
+           right: 0 !important;
+           bottom: 0 !important;
+           width: 100% !important;
+           height: 100% !important;
+           min-width: 100% !important;
+           min-height: 100% !important;
+           max-width: 100% !important;
+           max-height: 100% !important;
+           object-fit: cover !important;
+           object-position: center center !important;
+           display: block !important;
+           margin: 0 !important;
+           padding: 0 !important;
+           transform: none !important;
+           vertical-align: top !important;
+       }
+
+       /* Ensure Plyr wrapper fills container completely */
+       .secondary__playlist .video-item__thumb .plyr,
+       .secondary__playlist .video-item__thumb .plyr--video,
+       .secondary__playlist .video-item__thumb .plyr__video-wrapper,
+       .secondary__playlist .video-item__thumb .plyr__poster,
+       .play-video .secondary__playlist .video-item__thumb .plyr,
+       .play-video .secondary__playlist .video-item__thumb .plyr--video,
+       .play-video .secondary__playlist .video-item__thumb .plyr__video-wrapper,
+       .play-video .secondary__playlist .video-item__thumb .plyr__poster {
+           position: absolute !important;
+           top: 0 !important;
+           left: 0 !important;
+           right: 0 !important;
+           bottom: 0 !important;
+           width: 100% !important;
+           height: 100% !important;
+           margin: 0 !important;
+           padding: 0 !important;
+           transform: none !important;
+       }
+
+       .secondary__playlist .video-item__thumb .plyr video,
+       .secondary__playlist .video-item__thumb .plyr__video-wrapper video,
+       .play-video .secondary__playlist .video-item__thumb .plyr video,
+       .play-video .secondary__playlist .video-item__thumb .plyr__video-wrapper video {
+           position: absolute !important;
+           top: 0 !important;
+           left: 0 !important;
+           right: 0 !important;
+           bottom: 0 !important;
+           width: 100% !important;
+           height: 100% !important;
+           min-width: 100% !important;
+           min-height: 100% !important;
+           max-width: 100% !important;
+           max-height: 100% !important;
+           object-fit: cover !important;
+           object-position: center center !important;
+           margin: 0 !important;
+           padding: 0 !important;
+           transform: none !important;
+       }
    </style>
 @endpush
 
@@ -813,6 +1193,11 @@
                     controls,
                     ratio: '16:9',
                     autoplay: true,
+                    captions: {
+                        active: true,
+                        language: 'auto',
+                        update: false
+                    },
                     quality: {
                         default: 720,
                         options: [1080, 720, 480, 360, 240],
@@ -823,6 +1208,33 @@
                         }
                     }
                 });
+
+                // Enable captions if subtitles exist
+                @if($video->subtitles->count() > 0)
+                singleplayer.on('ready', function() {
+                    // Enable captions by default
+                    const tracks = singleplayer.media.textTracks;
+                    if (tracks && tracks.length > 0) {
+                        // Find the default track or first track
+                        let defaultTrack = null;
+                        for (let i = 0; i < tracks.length; i++) {
+                            if (tracks[i].mode === 'showing' || tracks[i].default) {
+                                defaultTrack = tracks[i];
+                                break;
+                            }
+                        }
+                        if (!defaultTrack && tracks.length > 0) {
+                            defaultTrack = tracks[0];
+                        }
+                        if (defaultTrack) {
+                            defaultTrack.mode = 'showing';
+                        }
+                    }
+                });
+                @endif
+                
+                // Make singleplayer globally accessible for transcript functionality
+                window.singleplayer = singleplayer;
 
 
                 const loader = document.getElementById('loader');
@@ -1764,6 +2176,227 @@
                         initEmojiPicker($(this));
                     }
                 });
+            });
+
+            // Transcript functionality for regular videos
+            let currentTranscriptData = null;
+            let currentVideoId = null;
+
+            // Parse VTT file content
+            function parseVTT(vttText) {
+                const cues = [];
+                const lines = vttText.split('\n');
+                let currentCue = null;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+
+                    // Skip WEBVTT header and empty lines
+                    if (line === 'WEBVTT' || line === '' || line.startsWith('NOTE') || line.startsWith('STYLE')) {
+                        continue;
+                    }
+
+                    // Check if line is a timestamp (format: 00:00:00.000 --> 00:00:00.000)
+                    const timestampRegex = /^(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
+                    const match = line.match(timestampRegex);
+
+                    if (match) {
+                        // Save previous cue if exists
+                        if (currentCue && currentCue.text) {
+                            cues.push(currentCue);
+                        }
+
+                        // Create new cue
+                        const startTime = parseFloat(match[1]) * 3600 + parseFloat(match[2]) * 60 + parseFloat(match[3]) + parseFloat(match[4]) / 1000;
+                        const endTime = parseFloat(match[5]) * 3600 + parseFloat(match[6]) * 60 + parseFloat(match[7]) + parseFloat(match[8]) / 1000;
+
+                        currentCue = {
+                            start: startTime,
+                            end: endTime,
+                            text: ''
+                        };
+                    } else if (currentCue && line) {
+                        // Add text to current cue
+                        if (currentCue.text) {
+                            currentCue.text += ' ' + line;
+                        } else {
+                            currentCue.text = line;
+                        }
+                    }
+                }
+
+                // Add last cue
+                if (currentCue && currentCue.text) {
+                    cues.push(currentCue);
+                }
+
+                return cues;
+            }
+
+            // Format time for display
+            function formatTime(seconds) {
+                const hours = Math.floor(seconds / 3600);
+                const minutes = Math.floor((seconds % 3600) / 60);
+                const secs = Math.floor(seconds % 60);
+                
+                if (hours > 0) {
+                    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+                return `${minutes}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            // Load and display transcript
+            function loadTranscript(subtitleUrl, languageLabel) {
+                $('.transcript-text-content').html('<p style="text-align: center; color: hsl(var(--body-color));">@lang("Loading transcript...")</p>');
+
+                // Check if URL is valid
+                if (!subtitleUrl || subtitleUrl === '' || subtitleUrl.includes('default.png') || subtitleUrl.includes('placeholder')) {
+                    console.error('Invalid subtitle URL:', subtitleUrl);
+                    $('.transcript-text-content').html('<p style="text-align: center; color: hsl(var(--body-color));">@lang("Invalid transcript file URL")</p>');
+                    return;
+                }
+
+                fetch(subtitleUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/vtt, text/plain, */*'
+                    },
+                    cache: 'no-cache'
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(vttText => {
+                        if (!vttText || vttText.trim() === '') {
+                            throw new Error('Empty transcript file');
+                        }
+
+                        const cues = parseVTT(vttText);
+                        currentTranscriptData = cues;
+
+                        if (cues.length === 0) {
+                            $('.transcript-text-content').html('<p style="text-align: center; color: hsl(var(--body-color));">@lang("No transcript available")</p>');
+                            return;
+                        }
+
+                        let html = '';
+                        cues.forEach((cue, index) => {
+                            html += `<div class="transcript-cue" data-start="${cue.start}" data-index="${index}">
+                                <span class="transcript-time">${formatTime(cue.start)}</span>
+                                <span class="transcript-text">${cue.text}</span>
+                            </div>`;
+                        });
+
+                        $('.transcript-text-content').html(html);
+
+                        // Add click handlers to cues
+                        $('.transcript-cue').on('click', function() {
+                            const startTime = parseFloat($(this).data('start'));
+                            
+                            // Get player instance from window or DOM
+                            const player = window.singleplayer || Plyr.setup('.video-player')[0];
+                            
+                            if (player) {
+                                player.currentTime = startTime;
+                                player.play();
+                            }
+
+                            // Highlight active cue
+                            $('.transcript-cue').removeClass('active');
+                            $(this).addClass('active');
+                        });
+
+                        // Update active cue based on video time
+                        const player = window.singleplayer || Plyr.setup('.video-player')[0];
+                        if (player) {
+                            const updateActiveCue = () => {
+                                const currentTime = player.currentTime;
+                                $('.transcript-cue').each(function() {
+                                    const start = parseFloat($(this).data('start'));
+                                    const nextCue = $(this).next('.transcript-cue');
+                                    const end = nextCue.length ? parseFloat(nextCue.data('start')) : parseFloat($(this).data('start')) + 5;
+                                    
+                                    if (currentTime >= start && currentTime < end) {
+                                        $('.transcript-cue').removeClass('active');
+                                        $(this).addClass('active');
+                                        
+                                        // Auto-scroll to active cue
+                                        const transcriptContent = $('.transcript-text-content');
+                                        const cueTop = $(this).position().top + transcriptContent.scrollTop();
+                                        const cueHeight = $(this).outerHeight();
+                                        const containerHeight = transcriptContent.height();
+                                        
+                                        if (cueTop < transcriptContent.scrollTop() || cueTop + cueHeight > transcriptContent.scrollTop() + containerHeight) {
+                                            transcriptContent.animate({
+                                                scrollTop: cueTop - containerHeight / 2
+                                            }, 300);
+                                        }
+                                    }
+                                });
+                            };
+
+                            player.on('timeupdate', updateActiveCue);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading transcript:', error);
+                        console.error('Subtitle URL:', subtitleUrl);
+                        $('.transcript-text-content').html(`<p style="text-align: center; color: hsl(var(--body-color));">@lang("Failed to load transcript")<br><small style="font-size: 11px; opacity: 0.7;">${error.message}</small></p>`);
+                    });
+            }
+
+            // Open transcript box
+            $(document).on('click', '.transcriptBtn', function() {
+                const videoId = $(this).data('video_id');
+                const subtitles = $(this).data('subtitles');
+                
+                currentVideoId = videoId;
+                
+                // Populate language selector
+                const languageSelect = $('.transcript-language-select');
+                languageSelect.empty();
+                languageSelect.append('<option value="">@lang("Select Language")</option>');
+                
+                subtitles.forEach((subtitle, index) => {
+                    const label = subtitle.caption || subtitle.language_code || `Language ${index + 1}`;
+                    languageSelect.append(`<option value="${index}" data-url="${subtitle.file_url}">${label}</option>`);
+                });
+
+                $('.transcript-box').addClass('show-transcript');
+                $('.transcript-text-content').html('<p style="text-align: center; color: hsl(var(--body-color));">@lang("Select a language to view transcript")</p>');
+            });
+
+            // Close transcript box
+            $('.transcript-box__close-icon').on('click', function() {
+                $('.transcript-box').removeClass('show-transcript');
+                currentTranscriptData = null;
+                currentVideoId = null;
+            });
+
+            // Handle language selection
+            $(document).on('change', '.transcript-language-select', function() {
+                const selectedIndex = $(this).val();
+                if (selectedIndex === '') {
+                    $('.transcript-text-content').html('<p style="text-align: center; color: hsl(var(--body-color));">@lang("Select a language to view transcript")</p>');
+                    return;
+                }
+
+                const selectedOption = $(this).find('option:selected');
+                const subtitleUrl = selectedOption.data('url');
+                
+                if (subtitleUrl) {
+                    loadTranscript(subtitleUrl, selectedOption.text());
+                }
+            });
+
+            // Close transcript when clicking outside
+            $(document).on('click', function(e) {
+                if ($(e.target).closest('.transcript-box, .transcriptBtn').length === 0) {
+                    $('.transcript-box').removeClass('show-transcript');
+                }
             });
         })(jQuery);
     </script>

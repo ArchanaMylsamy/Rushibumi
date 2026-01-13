@@ -11,34 +11,40 @@
                 </button>
             </div>
             <div class="modal-body">
+                @php
+                    // Use live watch route if it's a live stream, otherwise use video play route
+                    $watchUrl = isset($watchRoute) ? $watchRoute : route('video.play', [$video->id, $video->slug]);
+                @endphp
                 <div class="share-items">
                     <a class="share-item whatsapp"
-                        href="https://api.whatsapp.com/send?text={{ route('video.play', [$video->id, $video->slug]) }}"
+                        href="https://api.whatsapp.com/send?text={{ $watchUrl }}"
                         target="_blank">
                         <i class="lab la-whatsapp"></i>
                     </a>
                     <a class="share-item facebook"
-                        href="https://www.facebook.com/sharer/sharer.php?u={{ route('video.play', [$video->id, $video->slug]) }}"
+                        href="https://www.facebook.com/sharer/sharer.php?u={{ $watchUrl }}"
                         target="_blank">
                         <i class="lab la-facebook-f"></i>
                     </a>
 
                     <a class="share-item twitter"
-                        href="https://twitter.com/intent/tweet?url={{ route('video.play', [$video->id, $video->slug]) }}&text={{ $video->title }}"
+                        href="https://twitter.com/intent/tweet?url={{ $watchUrl }}&text={{ $video->title }}"
                         target="_blank">
                         <i class="fa-brands fa-x-twitter"></i>
                     </a>
                     <a class="share-item envelope"
-                        href="mailto:?subject={{ $video->title }}&body={{ route('video.play', [$video->id, $video->slug]) }}">
+                        href="mailto:?subject={{ $video->title }}&body={{ $watchUrl }}">
                         <i class="las la-envelope"></i>
                     </a>
-                    <a class="share-item embed" href="javascript:void(0)" data-embed-code="{{ htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>') }}">
-                        <i class="las la-code"></i>
-                    </a>
+                    @if(!isset($isLiveStream) || !$isLiveStream)
+                        <a class="share-item embed" href="javascript:void(0)" data-embed-code="{{ htmlspecialchars('<iframe src="' . route('embed', [$video->id, $video->slug]) . '" width="560" height="315" frameborder="0" allowfullscreen></iframe>') }}">
+                            <i class="las la-code"></i>
+                        </a>
+                    @endif
                 </div>
                 <div class="share-embed">
                     <input class="form--control copyText" type="text"
-                        value="{{ route('video.play', [$video->id, $video->slug]) }}">
+                        value="{{ $watchUrl }}">
                     <button class="share-embed-btn copyBtn">@lang('Copy')</button>
                 </div>
                 <div class="share-embed embed-code-section" style="display: none; margin-top: 15px;">
@@ -71,7 +77,7 @@
                             <label class="check-type mb-2 w-100" for="flexCheck{{ $playlist->id }}">
                                 <input class="check-type-input" id="flexCheck{{ $playlist->id }}" name="playlist_id[]"
                                     type="checkbox" value="{{ $playlist->id }}"
-                                    @if (in_array($playlist->id, $video->playlists->pluck('id')->toArray())) checked @endif>
+                                    @if (isset($video->playlists) && $video->playlists->count() > 0 && in_array($playlist->id, $video->playlists->pluck('id')->toArray())) checked @endif>
                                 <span class="check-type-icon">
                                     <svg class="check-circle" width="13" height="10" viewBox="0 0 13 10"
                                         fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -170,7 +176,7 @@
                         </div>
                         <div class="col-lg-6">
                             <input class="form-control form--control amount" name="amount" type="hidden"
-                                value="{{ getAmount($video->price) }}" placeholder="@lang('00.00')" readonly
+                                value="{{ getAmount($video->price ?? 0) }}" placeholder="@lang('00.00')" readonly
                                 autocomplete="off">
                             <div class="payment-system-list border-style">
                                 <div class="deposit-info">

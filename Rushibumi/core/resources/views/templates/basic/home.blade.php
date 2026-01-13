@@ -14,64 +14,158 @@
                      data-full-width-responsive="true"></ins>
             </div>
         </div>
-
-        @if (!blank($shortVideos))
-            <x-home-body-title icon="vti-short" title="Shorts" />
-            <section class="shorts-section">
-                <div class="row gy-4">
-                    <div class="col-lg-12">
-                        <div class="short_slider owl-carousel">
-                            @include($activeTemplate . 'partials.video.shorts_list', [
-                                'shortVideos' => $shortVideos,
-                            ])
+ 
+        @php
+            // Create varied pattern: multiple rows, then shorts, then one row, then shorts, etc.
+            $videosPerRow = 3;
+            $hasShorts = !blank($shortVideos);
+            $hasVideos = !blank($allVideos);
+           
+            // Pattern: [rows_count, rows_count, rows_count, ...]
+            // Example: [2, 1, 3, 1, 2] means: 2 rows videos, shorts, 1 row videos, shorts, 3 rows videos, shorts, etc.
+            $pattern = [2, 1, 3, 1, 2]; // Varied pattern
+            $videoGroups = [];
+            $currentIndex = 0;
+            $patternIndex = 0;
+           
+            if ($hasVideos) {
+                $allVideosCollection = $allVideos;
+                $totalVideos = $allVideosCollection->count();
+               
+                while ($currentIndex < $totalVideos) {
+                    $rowsInThisGroup = $pattern[$patternIndex % count($pattern)];
+                    $videosInThisGroup = $rowsInThisGroup * $videosPerRow;
+                   
+                    // Get the slice of videos for this group (keep as collection)
+                    $groupVideos = $allVideosCollection->slice($currentIndex, $videosInThisGroup);
+                   
+                    if ($groupVideos->isNotEmpty()) {
+                        $videoGroups[] = $groupVideos;
+                        $currentIndex += $groupVideos->count();
+                    } else {
+                        break;
+                    }
+                   
+                    $patternIndex++;
+                }
+            }
+        @endphp
+ 
+        @if ($hasVideos || $hasShorts)
+            @php
+                $groupIndex = 0;
+                $totalGroups = count($videoGroups);
+            @endphp
+ 
+            {{-- Show shorts at the beginning if there are no videos --}}
+            @if ($hasShorts && !$hasVideos)
+                <x-home-body-title icon="vti-short" title="Shorts" />
+                <section class="shorts-section">
+                    <div class="row gy-4">
+                        <div class="col-lg-12">
+                            <div class="short_slider owl-carousel">
+                                @include($activeTemplate . 'partials.video.shorts_list', [
+                                    'shortVideos' => $shortVideos,
+                                ])
+                            </div>
                         </div>
                     </div>
+                </section>
+            @endif
+ 
+            @foreach ($videoGroups as $videoGroup)
+                {{-- Display Video Group (Multiple rows or single row) --}}
+                @if (!blank($videoGroup))
+                    @if ($groupIndex == 0)
+                        <x-home-body-title icon="vti-video" title="Videos" />
+                    @endif
+                   
+                    {{-- Chunk the group into rows --}}
+                    @php
+                        $rows = $videoGroup->chunk($videosPerRow);
+                    @endphp
+                   
+                    @foreach ($rows as $row)
+                        <div class="video-wrapper">
+                            @include($activeTemplate . 'partials.video.video_list', ['videos' => $row])
+                        </div>
+                    @endforeach
+                @endif
+ 
+                {{-- Display Shorts after each video group (between groups, not after the last) --}}
+                @if ($hasShorts && $groupIndex < $totalGroups - 1)
+                    <x-home-body-title icon="vti-short" title="Shorts" />
+                    <section class="shorts-section">
+                        <div class="row gy-4">
+                            <div class="col-lg-12">
+                                <div class="short_slider owl-carousel">
+                                    @include($activeTemplate . 'partials.video.shorts_list', [
+                                        'shortVideos' => $shortVideos,
+                                    ])
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @endif
+ 
+                @php $groupIndex++; @endphp
+            @endforeach
+ 
+            {{-- Show shorts after last video group if there's only one group or if shorts haven't been shown yet --}}
+            @if ($hasShorts && $hasVideos && $totalGroups > 0 && $totalGroups == 1)
+                <x-home-body-title icon="vti-short" title="Shorts" />
+                <section class="shorts-section">
+                    <div class="row gy-4">
+                        <div class="col-lg-12">
+                            <div class="short_slider owl-carousel">
+                                @include($activeTemplate . 'partials.video.shorts_list', [
+                                    'shortVideos' => $shortVideos,
+                                ])
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            @endif
+ 
+            {{-- Display remaining paginated videos for infinite scroll --}}
+            @if (!blank($videos) && $videos->hasMorePages())
+                <div class="text-center d-none spinner mt-4 w-100" id="loading-spinner">
+                    <i class="las la-spinner"></i>
                 </div>
-            </section>
+            @endif
         @endif
-
-        @if (!blank($videos))
-            <x-home-body-title icon="vti-video" title="Videos" />
-
-            <div class="video-wrapper">
-                @include($activeTemplate . 'partials.video.video_list', ['videos' => $videos])
-            </div>
-            <div class="text-center d-none spinner mt-4 w-100" id="loading-spinner">
-                <i class="las la-spinner"></i>
-            </div>
-        @endif
-
-        @if (blank($shortVideos) && blank($videos))
+ 
+        @if (blank($shortVideos) && blank($allVideos))
             <div class="empty-container">
                 @include('Template::partials.empty')
             </div>
         @endif
     </div>
 @endsection
-
+ 
 @push('style')
     <style>
         .spinner {
             text-align: center;
             margin-top: 20px;
         }
-
+ 
         .spinner i {
             font-size: 45px;
             color: #ff0000;
             animation: spin 1s linear infinite;
         }
-
+ 
         @keyframes spin {
             0% {
                 transform: rotate(0deg);
             }
-
+ 
             100% {
                 transform: rotate(360deg);
             }
         }
-
+ 
         /* Google AdSense - Top Banner Only */
         .adsense-top-banner {
             width: 100%;
@@ -86,31 +180,31 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
-
+ 
         .adsense-top-banner:hover {
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             transform: translateY(-2px);
         }
-
+ 
         .ad-shimmer {
             position: absolute;
             top: 0;
             left: -100%;
             width: 200%;
             height: 100%;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.1) 50%, 
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.1) 50%,
                 transparent 100%
             );
             animation: shimmerMove 4s infinite;
         }
-
+ 
         @keyframes shimmerMove {
             0% { left: -100%; }
             100% { left: 100%; }
         }
-
+ 
         .ad-content {
             position: relative;
             z-index: 2;
@@ -120,7 +214,7 @@
             align-items: center;
             justify-content: center;
         }
-
+ 
         .ad-badge {
             position: absolute;
             top: -10px;
@@ -136,35 +230,35 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             z-index: 3;
         }
-
+ 
         /* Light Theme */
         [data-theme="light"] .adsense-top-banner {
             background: rgba(0, 0, 0, 0.02);
             border-color: rgba(0, 0, 0, 0.08);
         }
-
+ 
         [data-theme="light"] .ad-shimmer {
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(0, 0, 0, 0.05) 50%, 
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(0, 0, 0, 0.05) 50%,
                 transparent 100%
             );
         }
-
+ 
         /* Dark Theme */
         [data-theme="dark"] .adsense-top-banner {
             background: rgba(255, 255, 255, 0.03);
             border-color: rgba(255, 255, 255, 0.08);
         }
-
+ 
         [data-theme="dark"] .ad-shimmer {
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.08) 50%, 
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.08) 50%,
                 transparent 100%
             );
         }
-
+ 
         /* Responsive Design */
         @media (max-width: 768px) {
             .adsense-top-banner {
@@ -173,25 +267,25 @@
                 margin-bottom: 20px;
                 border-radius: 10px;
             }
-
+ 
             .ad-content {
                 min-height: 50px;
             }
-
+ 
             .ad-badge {
                 font-size: 9px;
                 padding: 5px 12px;
                 letter-spacing: 1.2px;
             }
         }
-
+ 
         @media (max-width: 480px) {
             .adsense-top-banner {
                 min-height: 60px;
                 padding: 12px;
                 border-radius: 8px;
             }
-
+ 
             .ad-badge {
                 font-size: 8px;
                 padding: 4px 10px;
@@ -199,7 +293,7 @@
                 left: 15px;
             }
         }
-
+ 
         /* AdSense Container */
         .adsbygoogle {
             width: 100%;
@@ -207,24 +301,24 @@
         }
     </style>
 @endpush
-
+ 
 @push('style-lib')
     <link rel="stylesheet" href="{{ asset('assets/global/css/plyr.css') }}">
 @endpush
-
+ 
 @push('script-lib')
     <script src="{{ asset('assets/global/js/plyr.js') }}"></script>
 @endpush
-
+ 
 @push('script')
     <script>
         'use strict';
-
+ 
         const controls = [];
-
+ 
         $(document).ready(function() {
             playersInitiate();
-            
+           
             // Initialize Google AdSense Ad
             setTimeout(function() {
                 try {
@@ -234,18 +328,18 @@
                 }
             }, 100);
         });
-
+ 
         function playersInitiate() {
             // Initialize players for visible videos using Intersection Observer
             const videoPlayers = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
-            
+           
             if (videoPlayers.length === 0) return;
-            
+           
             // First, initialize videos that are already visible
             videoPlayers.forEach(videoEl => {
                 const rect = videoEl.getBoundingClientRect();
                 const isVisible = rect.top < window.innerHeight + 100 && rect.bottom > -100;
-                
+               
                 if (isVisible && !videoEl.hasAttribute('data-plyr-initialized')) {
                     try {
                         const player = new Plyr(videoEl, {
@@ -259,11 +353,11 @@
                     }
                 }
             });
-            
+           
             // Then set up observer for videos not yet visible
             const remainingVideos = document.querySelectorAll('.video-player:not([data-plyr-initialized])');
             if (remainingVideos.length === 0) return;
-            
+           
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !entry.target.hasAttribute('data-plyr-initialized')) {
@@ -283,12 +377,12 @@
             }, {
                 rootMargin: '100px' // Start loading 100px before video enters viewport
             });
-            
+           
             remainingVideos.forEach(player => {
                 observer.observe(player);
             });
         }
-
+ 
         $(document).ready(function() {
             const shortPlayers = Plyr.setup('.shorts-video-player', {
                 controls,
@@ -296,10 +390,10 @@
                 muted: true,
             });
         });
-
+ 
         let currentPage = "{{ $videos->currentPage() }}";
         let url = "{{ route('video.get') }}";
-
+ 
         $(window).scroll(function() {
             if ($(window).scrollTop() + $(window).height() >= $(document).height() - 5 && !lastPage) {
                 currentPage++;

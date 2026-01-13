@@ -49,6 +49,7 @@ Route::controller('PreviewController')->prefix('preview')->name('preview.')->gro
     Route::get('playlist/{slug?}', 'playlist')->name('playlist');
     Route::get('playlist/videos/{playlistSlug?}/{userSlug?}', 'playlistVideos')->name('playlist.videos');
     Route::get('shorts/{slug?}', 'shorts')->name('shorts');
+    Route::get('live/{slug?}', 'live')->name('live');
     Route::get('about/{slug?}', 'about')->name('about');
     Route::get('monthly-plan/{slug?}', 'monthlyPlan')->name('monthly.plan');
 });
@@ -99,4 +100,16 @@ Route::controller('SiteController')->group(function () {
     Route::get('search', 'search')->name('search');
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');
+});
+
+// Live Stream Routes
+Route::controller(\App\Http\Controllers\LiveStreamController::class)->prefix('live')->name('live.')->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('watch/{id}/{slug?}', 'watch')->name('watch');
+    Route::get('stream-info/{id}', 'getStreamInfo')->name('stream.info');
+    Route::get('debug/{id}', 'debugStream')->name('debug');
+    Route::get('comments/{id}', 'getComments')->name('comments');
+    Route::post('comment/{id}', 'addComment')->name('comment.add');
+    Route::get('recording/{id}', 'getRecordedVideo')->name('recording');
+    Route::post('update-duration/{id}', 'updateDuration')->name('update.duration');
 });
