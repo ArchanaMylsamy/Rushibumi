@@ -187,6 +187,32 @@ Route::middleware('admin')->group(function () {
             Route::post('status/{id}', 'status')->name('status');
         });
 
+    Route::controller('ManageFeedAdController')
+        ->name('feed_ads.')
+        ->prefix('feed-ads')
+        ->group(function () {
+            Route::get('index', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('store', 'store')->name('store');
+            Route::get('edit/{id}', 'edit')->name('edit');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::post('status/{id}', 'status')->name('status');
+            Route::post('delete/{id}', 'delete')->name('delete');
+        });
+
+    Route::controller('ManageVideoAdController')
+        ->name('video_ads.')
+        ->prefix('video-ads')
+        ->group(function () {
+            Route::get('index', 'index')->name('index');
+            Route::get('create', 'create')->name('create');
+            Route::post('store', 'store')->name('store');
+            Route::get('edit/{id}', 'edit')->name('edit');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::post('status/{id}', 'status')->name('status');
+            Route::post('delete/{id}', 'delete')->name('delete');
+        });
+
 
     Route::controller('ManageStorageController')->prefix('storage')->name('storage.')->group(function () {
         Route::get('index', 'index')->name('index');

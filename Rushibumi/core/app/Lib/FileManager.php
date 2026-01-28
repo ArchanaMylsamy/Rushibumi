@@ -79,7 +79,7 @@ class FileManager {
     public function __construct($file = null) {
         $this->file = $file;
         if ($file) {
-            $imageExtensions = ['jpg', 'jpeg', 'png', 'JPG', 'JPEG', 'PNG'];
+            $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'JPG', 'JPEG', 'PNG', 'GIF'];
             if (in_array($file->getClientOriginalExtension(), $imageExtensions)) {
                 $this->isImage = true;
             } else {
@@ -125,6 +125,17 @@ class FileManager {
      * @return void
      */
     protected function uploadImage() {
+        $extension = strtolower($this->file->getClientOriginalExtension());
+        $isGif = $extension === 'gif';
+        
+        // For GIFs, copy file directly to preserve animation (don't process with ImageManager)
+        if ($isGif) {
+            $this->file->move($this->path, $this->filename);
+            // Don't create thumbnail for GIFs (would break animation)
+            return;
+        }
+        
+        // For other images, process with ImageManager
         $manager = new ImageManager(new Driver());
         $image   = $manager->read($this->file);
 

@@ -161,6 +161,16 @@
                         </svg>
                     </button>
 
+                    <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                            <circle cx="12" cy="13" r="3"></circle>
+                        </svg>
+                    </button>
+
+                    <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                    <div class="comment-media-preview d-none"></div>
+
                     <div class="emoji-picker-container" style="display: none;">
                         <div class="emoji-picker">
                             <div class="emoji-picker-header">
@@ -405,6 +415,72 @@
             position: absolute;
             right: 50px;
             bottom: 10px;
+        }
+
+        /* Media Upload Button Styles */
+        .media-upload-btn {
+            position: absolute;
+            right: 90px;
+            bottom: 10px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: hsl(var(--base));
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+
+        .media-upload-btn:hover {
+            color: hsl(var(--base));
+            transform: scale(1.1);
+        }
+
+        .comment-form .media-upload-btn {
+            position: absolute;
+            right: 90px;
+            bottom: 10px;
+        }
+
+        /* Media Preview Styles */
+        .comment-media-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: hsl(var(--section-bg));
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .comment-media-preview img,
+        .comment-media-preview video {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .comment-media-preview .remove-media {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .comment-media-preview .remove-media:hover {
+            background: rgba(0, 0, 0, 0.9);
         }
 
         .comment-form .emoji-picker-btn {
@@ -1359,6 +1435,69 @@
                 })
 
 
+                // Media upload functionality
+                $(document).on('click', '.media-upload-btn', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const form = $(this).closest('.comment-form, .reply-form');
+                    const fileInput = form.find('.comment-media-input');
+                    fileInput.click();
+                });
+
+                $(document).on('change', '.comment-media-input', function(e) {
+                    const file = this.files[0];
+                    if (!file) return;
+
+                    const form = $(this).closest('.comment-form, .reply-form');
+                    const preview = form.find('.comment-media-preview');
+                    const fileType = file.type;
+
+                    // Validate file type
+                    if (!fileType.startsWith('video/') && fileType !== 'image/gif') {
+                        notify('error', 'Please select a video or GIF file');
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Validate file size (max 10MB)
+                    const maxSize = 10 * 1024 * 1024; // 10MB
+                    if (file.size > maxSize) {
+                        notify('error', 'File size must be less than 10MB');
+                        $(this).val('');
+                        return;
+                    }
+
+                    // Create preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.empty();
+                        if (fileType.startsWith('video/')) {
+                            preview.append(`
+                                <video controls style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                                    <source src="${e.target.result}" type="${fileType}">
+                                </video>
+                                <button type="button" class="remove-media" title="Remove">×</button>
+                            `);
+                        } else if (fileType === 'image/gif') {
+                            preview.append(`
+                                <img src="${e.target.result}" alt="GIF preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                                <button type="button" class="remove-media" title="Remove">×</button>
+                            `);
+                        }
+                        preview.removeClass('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                $(document).on('click', '.remove-media', function(e) {
+                    e.preventDefault();
+                    const form = $(this).closest('.comment-form, .reply-form');
+                    const preview = form.find('.comment-media-preview');
+                    const fileInput = form.find('.comment-media-input');
+                    preview.addClass('d-none').empty();
+                    fileInput.val('');
+                });
+
                 $('.comment-form').on('submit', function(e) {
                     e.preventDefault();
 
@@ -1367,10 +1506,39 @@
                         return;
                     }
 
+                    const form = $(this);
+                    const formData = new FormData();
+                    const fileInput = form.find('.comment-media-input')[0]; // Get native DOM element
+                    
+                    // Add form fields
+                    const commentText = form.find('textarea[name="comment"]').val();
+                    const csrfToken = $('meta[name="csrf-token"]').attr('content') || "{{ csrf_token() }}";
+                    
+                    if (!commentText || commentText.trim() === '') {
+                        notify('error', 'Please enter a comment');
+                        return;
+                    }
+                    
+                    formData.append('comment', commentText);
+                    if (csrfToken) {
+                        formData.append('_token', csrfToken);
+                    }
+                    
+                    // Add media file if selected
+                    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                        const selectedFile = fileInput.files[0];
+                        console.log('Uploading file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
+                        formData.append('comment_media', selectedFile);
+                    } else {
+                        console.log('No file selected for upload');
+                    }
+
                     $.ajax({
                         type: "post",
                         url: "{{ route('user.comment.submit', '') }}/" + videoId,
-                        data: $(this).serialize(),
+                        data: formData,
+                        processData: false,
+                        contentType: false,
                         dataType: "json",
                         headers: {
                             'X-CSRF-TOKEN': "{{ csrf_token() }}"
@@ -1379,12 +1547,28 @@
                             if (response.status === 'success') {
                                 $('.commentBox').css('height', '');
                                 $('.comment-box__content').prepend(response.data.comment);
-                                $('.comment-form').trigger('reset');
+                                form.trigger('reset');
+                                form.find('.comment-media-preview').addClass('d-none').empty();
                                 $('.commentCount').text(response.data.comment_count);
 
                             } else {
                                 notify('error', response.message.error);
                             }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'An error occurred while submitting the comment';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                if (xhr.responseJSON.message.error) {
+                                    errorMessage = Array.isArray(xhr.responseJSON.message.error) 
+                                        ? xhr.responseJSON.message.error.join(' ') 
+                                        : xhr.responseJSON.message.error;
+                                } else if (typeof xhr.responseJSON.message === 'string') {
+                                    errorMessage = xhr.responseJSON.message;
+                                } else if (Array.isArray(xhr.responseJSON.message)) {
+                                    errorMessage = xhr.responseJSON.message.join(' ');
+                                }
+                            }
+                            notify('error', errorMessage);
                         }
                     });
                 });
@@ -1469,11 +1653,40 @@
                     }
 
                     const form = $(this);
+                    const formData = new FormData();
+                    const fileInput = form.find('.comment-media-input')[0]; // Get native DOM element
+                    
+                    // Add form fields
+                    const commentText = form.find('textarea[name="comment"]').val();
+                    const replyTo = form.find('input[name="reply_to"]').val();
+                    const csrfToken = $('meta[name="csrf-token"]').attr('content') || form.find('input[name="_token"]').val();
+                    
+                    if (!commentText || commentText.trim() === '') {
+                        notify('error', 'Please enter a comment');
+                        return;
+                    }
+                    
+                    formData.append('comment', commentText);
+                    formData.append('reply_to', replyTo);
+                    if (csrfToken) {
+                        formData.append('_token', csrfToken);
+                    }
+                    
+                    // Add media file if selected
+                    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                        const selectedFile = fileInput.files[0];
+                        console.log('Uploading file:', selectedFile.name, 'Size:', selectedFile.size, 'Type:', selectedFile.type);
+                        formData.append('comment_media', selectedFile);
+                    } else {
+                        console.log('No file selected for upload');
+                    }
 
                     $.ajax({
                         type: "post",
                         url: "{{ route('user.comment.reply') }}",
-                        data: form.serialize(),
+                        data: formData,
+                        processData: false,
+                        contentType: false,
                         headers: {
                             'X-CSRF-TOKEN': "{{ csrf_token() }}"
                         },
@@ -1481,6 +1694,7 @@
                         success: function(response) {
                             if (response.status === 'success') {
                                 form.trigger('reset');
+                                form.find('.comment-media-preview').addClass('d-none').empty();
                                 $('.commentBox').css('height', '');
                                 var repliesContainer = form.closest('.parentComment').find(
                                     '.reply-wrapper').first();
@@ -1493,6 +1707,21 @@
                             } else {
                                 notify('error', response.message.error);
                             }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'An error occurred while submitting the reply';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                if (xhr.responseJSON.message.error) {
+                                    errorMessage = Array.isArray(xhr.responseJSON.message.error) 
+                                        ? xhr.responseJSON.message.error.join(' ') 
+                                        : xhr.responseJSON.message.error;
+                                } else if (typeof xhr.responseJSON.message === 'string') {
+                                    errorMessage = xhr.responseJSON.message;
+                                } else if (Array.isArray(xhr.responseJSON.message)) {
+                                    errorMessage = xhr.responseJSON.message.join(' ');
+                                }
+                            }
+                            notify('error', errorMessage);
                         }
                     });
                 });

@@ -16,7 +16,7 @@
                         </div>
                     @endif
 
-                    <video class="video-player" data-amount="{{ $video->price }}" muted playsinline
+                    <video class="video-player" data-amount="{{ $video->price }}" muted playsinline autoplay
                         data-poster="{{ getImage(getFilePath('thumbnail') . '/' . $video->thumb_image) }}" controls>
                         @if ($purchasedTrue)
                             @foreach ($video->videoFiles as $file)
@@ -280,6 +280,16 @@
                                             </svg>
                                         </button>
 
+                                        <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                                <circle cx="12" cy="13" r="3"></circle>
+                                            </svg>
+                                        </button>
+
+                                        <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                        <div class="comment-media-preview d-none"></div>
+
                                         <div class="emoji-picker-container" style="display: none;">
                                             <div class="emoji-picker">
                                                 <div class="emoji-picker-header">
@@ -459,6 +469,16 @@
                                             <line x1="15" y1="9" x2="15.01" y2="9"></line>
                                         </svg>
                                     </button>
+
+                                    <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                            <circle cx="12" cy="13" r="3"></circle>
+                                        </svg>
+                                    </button>
+
+                                    <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                    <div class="comment-media-preview d-none"></div>
 
                                     <div class="emoji-picker-container" style="display: none;">
                                         <div class="emoji-picker">
@@ -719,6 +739,78 @@
            position: absolute;
            right: 50px;
            bottom: 10px;
+       }
+
+       /* Media Upload Button Styles */
+       .media-upload-btn {
+           position: absolute;
+           right: 90px;
+           bottom: 10px;
+           background: transparent;
+           border: none;
+           cursor: pointer;
+           color: hsl(var(--base));
+           padding: 5px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           z-index: 10;
+           transition: all 0.2s ease;
+       }
+
+       .media-upload-btn:hover {
+           color: hsl(var(--base));
+           transform: scale(1.1);
+       }
+
+       .reply-form .media-upload-btn {
+           position: absolute;
+           right: 90px;
+           bottom: 10px;
+       }
+
+       .comment-form .media-upload-btn {
+           position: absolute;
+           right: 90px;
+           bottom: 10px;
+       }
+
+       /* Media Preview Styles */
+       .comment-media-preview {
+           margin-top: 10px;
+           padding: 10px;
+           background: hsl(var(--section-bg));
+           border-radius: 8px;
+           position: relative;
+       }
+
+       .comment-media-preview img,
+       .comment-media-preview video {
+           max-width: 100%;
+           max-height: 200px;
+           border-radius: 8px;
+           display: block;
+       }
+
+       .comment-media-preview .remove-media {
+           position: absolute;
+           top: 5px;
+           right: 5px;
+           background: rgba(0, 0, 0, 0.7);
+           color: white;
+           border: none;
+           border-radius: 50%;
+           width: 24px;
+           height: 24px;
+           cursor: pointer;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 14px;
+       }
+
+       .comment-media-preview .remove-media:hover {
+           background: rgba(0, 0, 0, 0.9);
        }
 
        /* Transcript box styles for regular video player */
@@ -1161,6 +1253,7 @@
                         'current-time',
                         'duration',
                         'mute',
+                        'volume',
                         'settings',
                         'fullscreen',
                         'pip',
@@ -1183,6 +1276,7 @@
                         'current-time',
                         'duration',
                         'mute',
+                        'volume',
                         'settings',
                         'fullscreen',
                         'pip',
@@ -1192,7 +1286,8 @@
                 const singleplayer = new Plyr('.video-player', {
                     controls,
                     ratio: '16:9',
-                    autoplay: true,
+                    autoplay: true, // Enable autoplay
+                    muted: true, // Start muted for autoplay compatibility
                     captions: {
                         active: true,
                         language: 'auto',
@@ -1241,17 +1336,27 @@
 
 
                 $(document).ready(function() {
-                    singleplayer.muted = false;
-
+                    // Keep muted initially for autoplay compatibility
+                    // Video will unmute after it starts playing
                 });
 
 
                 $(document).ready(function() {
-                    singleplayer.muted = false;
+                    // Unmute after video starts playing (for autoplay compatibility)
+                    singleplayer.on('playing', function() {
+                        if (singleplayer.muted) {
+                            singleplayer.muted = false;
+                        }
+                    });
                     const palyPlaylist = @json(!blank($palyPlaylist));
                     const relatedVideo = @json(@$relatedVideos[0]);
 
                     singleplayer.once('ended', function() {
+                        // Navigate to next video when current video ends
+                        navigateToNextVideo();
+                    });
+                    
+                    function navigateToNextVideo() {
                         if (palyPlaylist) {
                             const currentIndex = "{{ request()->index }}";
                             const index = parseInt(currentIndex);
@@ -1261,32 +1366,24 @@
                                 const nextVideo = relatedPlaylistVideos[index];
 
                                 if (`{{ $plan && $plan->count() > 0 }}`) {
-
                                     if (`{{ !@$palyPlaylist->title }}`) {
-
                                         window.location.href =
                                             "{{ route('video.play', ['', '']) }}/" +
                                             nextVideo.id + "/" + nextVideo.slug +
                                             "?plan={{ @$plan->slug }}&index=" + (index + 1);
                                     } else {
-
                                         window.location.href =
                                             "{{ route('video.play', ['', '']) }}/" +
                                             nextVideo.id + "/" + nextVideo.slug +
                                             "?list={{ @$palyPlaylist->slug }}&index=" + (
                                                 index + 1) + "&plan={{ @$plan->slug }}";
-
                                     }
-
                                 } else {
                                     window.location.href =
                                         "{{ route('video.play', ['', '']) }}/" +
                                         nextVideo.id + "/" + nextVideo.slug +
-                                        "?list={{ @$palyPlaylist->slug }}&index=" + (index +
-                                        1);
+                                        "?list={{ @$palyPlaylist->slug }}&index=" + (index + 1);
                                 }
-
-
                             }
                         } else {
                             if (relatedVideo && Array(relatedVideo).length > 0) {
@@ -1294,90 +1391,284 @@
                                     relatedVideo?.id + "/" + relatedVideo?.slug;
                             }
                         }
-                    });
+                    }
 
 
                 });
 
 
-                let adPlayer = ''
+                let adPlayer = null;
 
-                function adVideoPlayer() {
-                    adPlayer = new Plyr('.ad-player', {
-                        controls: [
+                function adVideoPlayer(skipAfterSeconds) {
+                    // Destroy existing player if any
+                    if (adPlayer) {
+                        try {
+                            adPlayer.destroy();
+                            adPlayer = null;
+                        } catch(e) {
+                            console.log('Error destroying ad player:', e);
+                        }
+                    }
+                    
+                    // Wait a bit for DOM to update, then initialize Plyr
+                    setTimeout(function() {
+                        const adVideoElement = document.querySelector('.ad-player');
+                        if (!adVideoElement) {
+                            console.error('Ad video element not found in DOM');
+                            return;
+                        }
+                        
+                        console.log('Initializing Plyr for ad video');
+                        
+                        try {
+                            adPlayer = new Plyr(adVideoElement, {
+                                controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'],
+                                ratio: '16:9',
+                                autoplay: true,
+                                muted: true, // Start muted for autoplay
+                            });
+                            
+                            if (!adPlayer) {
+                                console.error('Failed to create Plyr instance');
+                                return;
+                            }
+                            
+                            // Set up timeupdate event for skip button
+                            adPlayer.on('timeupdate', function() {
+                                if (!adPlayer) return;
+                                const skipAfter = skipAfterSeconds || 5;
+                                const currentAdTime = Math.floor(adPlayer.currentTime);
+                                let remainingTime = skipAfter - currentAdTime;
+                                if (skipAfter > 0 && remainingTime > 0) {
+                                    $('.skip-btn').attr('disabled', true).removeClass('d-none');
+                                    $('.skip-btn').text(`Skip in ${remainingTime} seconds`)
+                                        .removeClass('btn--base');
+                                } else {
+                                    $('.skip-btn').attr('disabled', false).addClass('skipAd')
+                                        .addClass('btn--base');
+                                    $('.skip-btn').text('Skip');
+                                }
+                            });
 
-                        ],
-                        ratio: '16:9',
-                    });
+                            // Set up ended event
+                            adPlayer.once('ended', function() {
+                                if (!adPlayer) return;
+                                adPlayer.pause();
+                                $('.adVideo').addClass('d-none');
+                                $('.adVideo').empty();
+                                $('.mainVideo').removeClass('d-none');
+                                
+                                // Handle different ad types
+                                if (currentAdType == 1) {
+                                    // Pre-roll: Start main video
+                                    preRollPlayed = true;
+                                    resetPlayFlag(); // Reset flag so video can play
+                                    singleplayer.play();
+                                } else if (currentAdType == 3) {
+                                    // Post-roll: Video already ended, don't restart
+                                    postRollPlayed = true;
+                                } else {
+                                    // Mid-roll: Resume main video
+                                    singleplayer.play();
+                                }
+                                
+                                adPlaying = false;
+                                currentAdType = null;
+                            });
+                            
+                            // Unmute after user interaction or when playing
+                            adPlayer.on('ready', function() {
+                                console.log('Ad player ready');
+                                // Try to unmute and play
+                                setTimeout(function() {
+                                    if (adPlayer) {
+                                        adPlayer.muted = false;
+                                        adPlayer.play().then(function() {
+                                            console.log('Ad video playing successfully');
+                                        }).catch(function(error) {
+                                            console.log('Ad play error on ready:', error);
+                                            // Try with muted autoplay
+                                            if (adPlayer) {
+                                                adPlayer.muted = true;
+                                                adPlayer.play().catch(function(err) {
+                                                    console.log('Ad play error even muted:', err);
+                                                });
+                                            }
+                                        });
+                                    }
+                                }, 100);
+                            });
+                            
+                            // Also try to play when video can play
+                            adVideoElement.addEventListener('canplay', function() {
+                                console.log('Ad video can play');
+                                if (adPlayer && adPlayer.paused) {
+                                    adPlayer.play().catch(function(error) {
+                                        console.log('Ad play error on canplay:', error);
+                                    });
+                                }
+                            });
+                            
+                            // Play immediately
+                            setTimeout(function() {
+                                if (adPlayer) {
+                                    adPlayer.play().then(function() {
+                                        console.log('Ad video playing');
+                                    }).catch(function(error) {
+                                        console.log('Ad play error:', error);
+                                        // Try unmuted play after user interaction
+                                        document.addEventListener('click', function playAdOnClick() {
+                                            if (adPlayer && adPlayer.paused) {
+                                                adPlayer.muted = false;
+                                                adPlayer.play().catch(function(err) {
+                                                    console.log('Ad play retry error:', err);
+                                                });
+                                                document.removeEventListener('click', playAdOnClick);
+                                            }
+                                        }, { once: true });
+                                    });
+                                }
+                            }, 300);
+                        } catch(error) {
+                            console.error('Error initializing ad player:', error);
+                        }
+                    }, 200);
                 }
 
                 $(document).ready(function() {
                     let adTriggers = @json($adsDurations).map(Number);
                     let currentAdIndex = 0;
                     let adPlaying = false;
+                    let preRollPlayed = false;
+                    let postRollPlayed = false;
+                    let currentAdType = null; // Track current ad type: 1=pre-roll, 2=mid-roll, 3=post-roll
 
                     let requestPending = false;
                     let adVideo = $('.adVideo');
                     let slug = "{{ $video->slug }}"
 
                     function playAd(response) {
+                        console.log('Playing ad:', response.data); // Debug
                         const adId = response.data.ad_id;
                         const encryptedVideoId = "{{ encrypt(@$video->id) }}";
+                        const skipAfter = response.data.skip_after || 5;
                         adPlaying = true;
                         singleplayer.pause();
                         $('.mainVideo').addClass('d-none');
 
-                        adVideo.html(`
-                                <video class="ad-player" playsinline  controls>
-                                    <source src="${response.data.ad_video_src}" type="video/mp4" />
-                                </video>
-                                    ${(response.data.ad_type == 2 || response.data.ad_type == 3) ?
-                                    `<div class="ad-info"><div class="ad-info__thumb"><img src="${response.data.ad_logo}">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </div><div class="ad-info__content"><p>${response.data.ad_url}</p>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <a href="{{ route('redirect.ad', ['', '']) }}/${adId}/${encryptedVideoId}" class="text-white" target="_blank" >${response.data.button_label}</a>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </div></div>` : ''}
-                                <button class="skip-btn btn btn--base btn--sm ad-btn" type="button"></button>`);
+                        // Build action URL
+                        let actionUrl = response.data.action_url || response.data.ad_url || '';
+                        let clickUrl = actionUrl;
+                        if (!response.data.is_video_ad && actionUrl) {
+                            clickUrl = "{{ route('redirect.ad', ['', '']) }}/" + adId + "/" + encryptedVideoId;
+                        }
 
+                        console.log('Ad video source:', response.data.ad_video_src); // Debug
+
+                        // Create video element with proper attributes
+                        const videoHtml = `
+                            <video class="ad-player" playsinline controls autoplay muted preload="auto">
+                                <source src="${response.data.ad_video_src}" type="video/mp4" />
+                                Your browser does not support the video tag.
+                            </video>
+                            ${(response.data.ad_type == 2 || response.data.ad_type == 3) ?
+                            `<div class="ad-info"><div class="ad-info__thumb"><img src="${response.data.ad_logo || ''}">
+                            </div><div class="ad-info__content"><p>${response.data.ad_url || response.data.ad_title || ''}</p>
+                            ${clickUrl ? `<a href="${clickUrl}" class="text-white" target="_blank">${response.data.button_label || 'Visit'}</a>` : ''}
+                            </div></div>` : ''}
+                            <button class="skip-btn btn btn--base btn--sm ad-btn" type="button" style="display:none;">Skip</button>`;
+
+                        adVideo.html(videoHtml);
                         adVideo.removeClass('d-none');
-                        adVideoPlayer();
-                        adPlayer.play();
-                        adPlayer.on('timeupdate', function() {
-                            const adDuration = 5;
-                            const currentAdTime = Math.floor(adPlayer.currentTime);
-                            let remainingTime = adDuration - currentAdTime;
-                            if (remainingTime > 0) {
-                                $('.skip-btn').attr('disabled', true).removeClass('d-none');
-                                $('.skip-btn').text(`Skip in ${remainingTime} seconds`)
-                                    .removeClass('btn--base');
-                            } else {
-                                $('.skip-btn').attr('disabled', false).addClass('skipAd')
-                                    .addClass('btn--base');
-                                $('.skip-btn').text('Skip');
-                            }
-                        });
-
-                        adPlayer.once('ended', function() {
-                            adPlayer.pause();
-                            adVideo.addClass('d-none');
-                            adVideo.empty();
-                            $('.mainVideo').removeClass('d-none');
-                            singleplayer.play();
-                            adPlaying = false;
-                        });
+                        
+                        // Track play for VideoAd
+                        if (response.data.is_video_ad) {
+                            fetch('{{ route("video.ad.play") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    ad_id: adId
+                                })
+                            }).catch(err => {
+                                console.log('VideoAd play tracking error:', err);
+                            });
+                        }
+                        
+                        // Wait for DOM to update before initializing player
+                        setTimeout(function() {
+                            // Initialize and play ad - event listeners will be attached inside adVideoPlayer
+                            adVideoPlayer(skipAfter);
+                        }, 100);
                     }
 
-                    function requestAd() {
+                    function requestAd(adType = null) {
+                        if (requestPending) {
+                            console.log('Ad request already pending');
+                            return;
+                        }
                         requestPending = true;
+                        currentAdType = adType;
+                        
+                        console.log('Requesting ad, type:', adType, 'Video ID:', "{{ encrypt($video->id) }}");
+                        
                         $.ajax({
                             type: "get",
                             url: "{{ route('fetch.ad') }}",
                             data: {
-                                video_id: "{{ encrypt($video->id) }}"
+                                video_id: "{{ encrypt($video->id) }}",
+                                ad_type: adType // 1=pre-roll, 2=mid-roll, 3=post-roll
                             },
                             dataType: "json",
                             success: function(response) {
+                                console.log('Ad response received:', response);
                                 if (response.status == 'success') {
+                                    // Don't mark preRollPlayed here - it will be marked when ad finishes or is skipped
                                     playAd(response);
+                                } else {
+                                    // No ad available
+                                    console.log('No ad available, response:', response);
+                                    requestPending = false;
+                                    currentAdType = null;
+                                    resetPlayFlag(); // Reset flag
+                                    
+                                    // If pre-roll and no ad, start video
+                                    if (adType == 1 && !preRollPlayed) {
+                                        preRollPlayed = true;
+                                        const audience = "{{ $video->audience }}";
+                                        if (audience == 0) {
+                                            if (purchasedTrue || authVideo) {
+                                                console.log('Starting video (no pre-roll ad available)');
+                                                singleplayer.play();
+                                            }
+                                        } else {
+                                            // Video requires purchase, don't auto-play
+                                            resetPlayFlag();
+                                        }
+                                    }
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.log('Ad request error:', error, 'Status:', status, 'Response:', xhr.responseText);
+                                requestPending = false;
+                                currentAdType = null;
+                                resetPlayFlag(); // Reset flag
+                                
+                                // If pre-roll and error, start video
+                                if (adType == 1 && !preRollPlayed) {
+                                    preRollPlayed = true;
+                                    const audience = "{{ $video->audience }}";
+                                    if (audience == 0) {
+                                        if (purchasedTrue || authVideo) {
+                                            console.log('Starting video (ad request error)');
+                                            singleplayer.play();
+                                        }
+                                    } else {
+                                        // Video requires purchase, don't auto-play
+                                        resetPlayFlag();
+                                    }
                                 }
                             },
                             complete: function() {
@@ -1385,37 +1676,51 @@
                             }
                         });
                     }
-
-                    function checkAdTrigger() {
-                        const currentTime = Math.floor(singleplayer.currentTime);
-                        if (!adPlaying && !requestPending && adTriggers.includes(currentTime)) {
-                            requestAd();
-                            adTriggers.splice(adTriggers.indexOf(currentTime), 1);
+                    
+                    // Pre-roll ad: Play before video starts
+                    function playPreRollAd() {
+                        if (preRollPlayed || adPlaying || requestPending) {
+                            console.log('Pre-roll skipped:', {preRollPlayed, adPlaying, requestPending});
+                            return;
                         }
+                        console.log('Playing pre-roll ad');
+                        // Don't mark preRollPlayed here - it will be marked when ad finishes or is skipped
+                        requestAd(1); // 1 = pre-roll
                     }
+                    
+                    // Post-roll ad: Play after video ends
+                    function playPostRollAd() {
+                        if (postRollPlayed || adPlaying || requestPending) return;
+                        console.log('Playing post-roll ad');
+                        requestAd(3); // 3 = post-roll
+                        postRollPlayed = true;
+                    }
+                    
+                    // Show loader when video is buffering
+                    singleplayer.on('waiting', () => {
+                        loader.style.display = 'block';
+                    });
 
-                    let debounceTimer;
-                    singleplayer.on('timeupdate', function() {
+                    // Hide loader when playback starts or resumes
+                    singleplayer.on('playing', () => {
+                        loader.style.display = 'none';
+                    });
 
-                        // Show loader when video is buffering
-                        singleplayer.on('waiting', () => {
-                            loader.style.display = 'block';
-                        });
+                    // Hide loader on video end
+                    singleplayer.on('ended', () => {
+                        loader.style.display = 'none';
+                    });
 
-                        // Hide loader when playback starts or resumes
-                        singleplayer.on('playing', () => {
-                            loader.style.display = 'none';
-                        });
-
-                        // Hide loader on video end
-                        singleplayer.on('ended', () => {
-                            loader.style.display = 'none';
-                        });
-
-
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(checkAdTrigger, 100);
-
+                    // Autoplay video when ready
+                    singleplayer.on('ready', function() {
+                        const audience = "{{ $video->audience }}";
+                        if (audience == 0) {
+                            if (purchasedTrue || authVideo) {
+                                singleplayer.play().catch(function(error) {
+                                    console.log('Autoplay failed, user interaction required:', error);
+                                });
+                            }
+                        }
                     });
 
                     $(document).on('click', '.skipAd', function() {
@@ -1423,8 +1728,23 @@
                         $('.adVideo').addClass('d-none');
                         $('.primary_ad_player').empty();
                         $('.mainVideo').removeClass('d-none');
-                        singleplayer.play();
+                        
+                        // Handle different ad types
+                        if (currentAdType == 1) {
+                            // Pre-roll: Start main video
+                            preRollPlayed = true;
+                            resetPlayFlag(); // Reset flag so video can play
+                            singleplayer.play();
+                        } else if (currentAdType == 3) {
+                            // Post-roll: Don't restart video (it already ended)
+                            postRollPlayed = true;
+                        } else {
+                            // Mid-roll: Resume main video
+                            singleplayer.play();
+                        }
+                        
                         adPlaying = false;
+                        currentAdType = null;
                     })
                 });
 
@@ -1441,13 +1761,19 @@
 
 
 
-                const audience = "{{ $video->audience }}"
-                if (audience == 0) {
-                    if (purchasedTrue || authVideo) {
-                        singleplayer.play();
+                // Autoplay video when page loads
+                $(document).ready(function() {
+                    const audience = "{{ $video->audience }}";
+                    if (audience == 0) {
+                        if (purchasedTrue || authVideo) {
+                            setTimeout(function() {
+                                singleplayer.play().catch(function(error) {
+                                    console.log('Autoplay failed:', error);
+                                });
+                            }, 500);
+                        }
                     }
-
-                }
+                });
 
                 $('.SeeBtn').on('click', function() {
                     $('.hidden-content').addClass('d-none');
@@ -1671,6 +1997,69 @@
 
             });
 
+            // Media upload functionality
+            $(document).on('click', '.media-upload-btn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const form = $(this).closest('.comment-form, .reply-form');
+                const fileInput = form.find('.comment-media-input');
+                fileInput.click();
+            });
+
+            $(document).on('change', '.comment-media-input', function(e) {
+                const file = this.files[0];
+                if (!file) return;
+
+                const form = $(this).closest('.comment-form, .reply-form');
+                const preview = form.find('.comment-media-preview');
+                const fileType = file.type;
+
+                // Validate file type
+                if (!fileType.startsWith('video/') && fileType !== 'image/gif') {
+                    notify('error', 'Please select a video or GIF file');
+                    $(this).val('');
+                    return;
+                }
+
+                // Validate file size (max 10MB)
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (file.size > maxSize) {
+                    notify('error', 'File size must be less than 10MB');
+                    $(this).val('');
+                    return;
+                }
+
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.empty();
+                    if (fileType.startsWith('video/')) {
+                        preview.append(`
+                            <video controls style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                                <source src="${e.target.result}" type="${fileType}">
+                            </video>
+                            <button type="button" class="remove-media" title="Remove">×</button>
+                        `);
+                    } else if (fileType === 'image/gif') {
+                        preview.append(`
+                            <img src="${e.target.result}" alt="GIF preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                            <button type="button" class="remove-media" title="Remove">×</button>
+                        `);
+                    }
+                    preview.removeClass('d-none');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            $(document).on('click', '.remove-media', function(e) {
+                e.preventDefault();
+                const form = $(this).closest('.comment-form, .reply-form');
+                const preview = form.find('.comment-media-preview');
+                const fileInput = form.find('.comment-media-input');
+                preview.addClass('d-none').empty();
+                fileInput.val('');
+            });
+
             $('.comment-form').on('submit', function(e) {
                 e.preventDefault();
 
@@ -1679,24 +2068,154 @@
                     return;
                 }
 
+                const form = $(this);
+                const formData = new FormData();
+                const fileInput = form.find('.comment-media-input')[0]; // Get native DOM element
+                
+                // Add form fields
+                const commentText = form.find('textarea[name="comment"]').val();
+                const csrfToken = form.find('input[name="_token"]').val();
+                
+                if (!commentText || commentText.trim() === '') {
+                    notify('error', 'Please enter a comment');
+                    return;
+                }
+                
+                formData.append('comment', commentText);
+                if (csrfToken) {
+                    formData.append('_token', csrfToken);
+                }
+                
+                    // Add media file if selected
+                    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                        const selectedFile = fileInput.files[0];
+                        console.log('📤 Uploading file:', {
+                            name: selectedFile.name,
+                            size: selectedFile.size,
+                            type: selectedFile.type,
+                            sizeMB: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB'
+                        });
+                        formData.append('comment_media', selectedFile);
+                    } else {
+                        console.log('⚠️ No file selected for upload');
+                    }
+
+                console.log('🚀 Sending comment request to:', "{{ route('user.comment.submit', $video->id) }}");
+                
                 $.ajax({
                     type: "post",
                     url: "{{ route('user.comment.submit', $video->id) }}",
-                    data: $(this).serialize(),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     dataType: "json",
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}"
                     },
                     success: function(response) {
+                        console.log('✅ Comment submitted successfully:', response);
+                        
                         if (response.status === 'success') {
+                            // Check if media was uploaded
+                            if (response.data && response.data.comment) {
+                                const commentHtml = $(response.data.comment);
+                                const mediaContainer = commentHtml.find('.comment-media');
+                                const hasMedia = mediaContainer.length > 0;
+                                
+                                if (hasMedia) {
+                                    const mediaUrl = mediaContainer.data('media-url');
+                                    const mediaPath = mediaContainer.data('media-path');
+                                    const mediaType = mediaContainer.data('media-type');
+                                    const videoSource = commentHtml.find('video source').attr('src');
+                                    const imgSource = commentHtml.find('img').attr('src');
+                                    
+                                    console.log('📹 Media found in comment:', {
+                                        hasMedia: true,
+                                        mediaType: mediaType,
+                                        mediaPath: mediaPath,
+                                        mediaUrl: mediaUrl,
+                                        videoSource: videoSource,
+                                        imgSource: imgSource,
+                                        fullUrl: videoSource || imgSource
+                                    });
+                                    
+                                    // Verify the media URL is accessible
+                                    if (mediaUrl) {
+                                        console.log('🔗 Media URL:', mediaUrl);
+                                        console.log('📍 Full path should be: assets/comments/' + mediaPath);
+                                    }
+                                } else {
+                                    console.warn('⚠️ No media found in comment HTML');
+                                }
+                            }
+                            
                             $('.commentBox').css('height', '');
                             $('.comment-box__content').prepend(response.data.comment);
-                            $('.comment-form').trigger('reset');
+                            
+                            // After prepending, check if media is visible
+                            setTimeout(function() {
+                                const insertedMedia = $('.comment-box__content .comment-media').first();
+                                if (insertedMedia.length > 0) {
+                                    const mediaUrl = insertedMedia.data('media-url');
+                                    console.log('✅ Media element inserted:', {
+                                        exists: true,
+                                        url: mediaUrl,
+                                        visible: insertedMedia.is(':visible')
+                                    });
+                                    
+                                    // Check if video can load
+                                    const video = insertedMedia.find('video');
+                                    if (video.length > 0) {
+                                        video.on('loadedmetadata', function() {
+                                            console.log('✅ Video metadata loaded successfully');
+                                        });
+                                        video.on('error', function(e) {
+                                            console.error('❌ Video load error:', {
+                                                error: e,
+                                                src: video.find('source').attr('src')
+                                            });
+                                        });
+                                    }
+                                } else {
+                                    console.warn('⚠️ Media element not found after insertion');
+                                }
+                            }, 100);
+                            
+                            form.trigger('reset');
+                            form.find('.comment-media-preview').addClass('d-none').empty();
+                            // Reset file input
+                            if (fileInput) {
+                                fileInput.value = '';
+                            }
                             $('.commentCount').text(response.data.comment_count);
+                            
+                            console.log('✅ Comment displayed successfully');
 
                         } else {
                             notify('error', response.message.error);
                         }
+                    },
+                    error: function(xhr) {
+                        console.error('❌ Comment submission failed:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            response: xhr.responseJSON,
+                            responseText: xhr.responseText
+                        });
+                        
+                        let errorMessage = 'An error occurred while submitting the comment';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            if (xhr.responseJSON.message.error) {
+                                errorMessage = Array.isArray(xhr.responseJSON.message.error) 
+                                    ? xhr.responseJSON.message.error.join(' ') 
+                                    : xhr.responseJSON.message.error;
+                            } else if (typeof xhr.responseJSON.message === 'string') {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (Array.isArray(xhr.responseJSON.message)) {
+                                errorMessage = xhr.responseJSON.message.join(' ');
+                            }
+                        }
+                        notify('error', errorMessage);
                     }
                 });
             });
@@ -1756,18 +2275,72 @@
                 }
 
                 const form = $(this);
+                const formData = new FormData();
+                const fileInput = form.find('.comment-media-input')[0]; // Get native DOM element
+                
+                // Add form fields
+                const commentText = form.find('textarea[name="comment"]').val();
+                const replyTo = form.find('input[name="reply_to"]').val();
+                const csrfToken = $('meta[name="csrf-token"]').attr('content') || form.find('input[name="_token"]').val();
+                
+                if (!commentText || commentText.trim() === '') {
+                    notify('error', 'Please enter a comment');
+                    return;
+                }
+                
+                formData.append('comment', commentText);
+                formData.append('reply_to', replyTo);
+                if (csrfToken) {
+                    formData.append('_token', csrfToken);
+                }
+                
+                    // Add media file if selected
+                    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                        const selectedFile = fileInput.files[0];
+                        console.log('📤 Uploading reply file:', {
+                            name: selectedFile.name,
+                            size: selectedFile.size,
+                            type: selectedFile.type,
+                            sizeMB: (selectedFile.size / 1024 / 1024).toFixed(2) + ' MB'
+                        });
+                        formData.append('comment_media', selectedFile);
+                    } else {
+                        console.log('⚠️ No file selected for reply upload');
+                    }
 
+                console.log('🚀 Sending reply request to:', "{{ route('user.comment.reply') }}");
+                
                 $.ajax({
                     type: "post",
                     url: "{{ route('user.comment.reply') }}",
-                    data: form.serialize(),
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     headers: {
                         'X-CSRF-TOKEN': "{{ csrf_token() }}"
                     },
                     dataType: "json",
                     success: function(response) {
+                        console.log('✅ Reply submitted successfully:', response);
+                        
                         if (response.status === 'success') {
+                            // Check if media was uploaded in reply
+                            if (response.data && response.data.reply) {
+                                const replyHtml = $(response.data.reply);
+                                const hasMedia = replyHtml.find('.comment-media').length > 0;
+                                console.log('📹 Reply HTML received:', {
+                                    hasMedia: hasMedia,
+                                    mediaPath: replyHtml.find('.comment-media').data('media-path'),
+                                    mediaUrl: replyHtml.find('.comment-media').data('media-url')
+                                });
+                            }
+                            
                             form.trigger('reset');
+                            form.find('.comment-media-preview').addClass('d-none').empty();
+                            // Reset file input
+                            if (fileInput) {
+                                fileInput.value = '';
+                            }
                             $('.commentBox').css('height', '');
 
                             var repliesContainer = form.closest('.parentComment').find(
@@ -1775,12 +2348,28 @@
 
                             if (repliesContainer.length) {
                                 repliesContainer.append(response.data.reply);
+                                console.log('✅ Reply displayed successfully');
                             }
 
                             $('.commentCount').text(response.data.comment_count);
                         } else {
                             notify('error', response.message.error);
                         }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'An error occurred while submitting the reply';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            if (xhr.responseJSON.message.error) {
+                                errorMessage = Array.isArray(xhr.responseJSON.message.error) 
+                                    ? xhr.responseJSON.message.error.join(' ') 
+                                    : xhr.responseJSON.message.error;
+                            } else if (typeof xhr.responseJSON.message === 'string') {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (Array.isArray(xhr.responseJSON.message)) {
+                                errorMessage = xhr.responseJSON.message.join(' ');
+                            }
+                        }
+                        notify('error', errorMessage);
                     }
                 });
             });

@@ -427,5 +427,222 @@
     .link-color:hover {
         opacity: 0.8;
     }
+
+    /* Header Styling - Same as Home Page */
+    .home-header {
+        background: rgba(0, 0, 0, 0.9) !important;
+        border-bottom: 1px solid hsl(var(--border-color)) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        position: relative !important;
+        z-index: 100 !important;
+    }
+
+    .home-header__inner {
+        padding: 12px 20px;
+        position: relative !important;
+        z-index: 100 !important;
+    }
+
+    /* Search Form Wrapper - Ensure it's visible */
+    .home-fluid .home-header__left .search-form-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        justify-content: flex-start !important;
+        position: relative !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Search Form - Make it visible and properly sized */
+    .home-fluid .home-header__left .search-form {
+        width: 500px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+    }
+
+    @media screen and (max-width: 1499px) {
+        .home-fluid .home-header__left .search-form {
+            width: 440px !important;
+        }
+    }
+
+    @media screen and (max-width: 991px) {
+        .home-fluid .home-header__left .search-form {
+            width: 260px !important;
+        }
+    }
+
+    /* Override mobile styles to keep search form visible on desktop */
+    @media screen and (min-width: 768px) {
+        .home-fluid .home-header__left .search-form {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+            background-color: transparent !important;
+            height: auto !important;
+            right: auto !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+        }
+    }
+
+    /* Ensure form group is properly styled */
+    .home-fluid .home-header__left .search-form .form-group {
+        position: relative !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
+        display: block !important;
+    }
+
+    /* Search Form Input - Same as Home Page */
+    .home-fluid .home-header__left .search-form .form-group .form--control {
+        background: rgba(0, 0, 0, 0.6) !important;
+        border: 1px solid hsl(var(--border-color)) !important;
+        color: #ffffff !important;
+        border-radius: 24px !important;
+        padding: 10px 80px 10px 45px !important;
+        width: 100% !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Search Clear Button - Same as Home Page */
+    .home-fluid .home-header__left .search-form .form-group .search-clear-btn {
+        position: absolute !important;
+        right: 50px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        background: transparent !important;
+        border: none !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        cursor: pointer !important;
+        padding: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 10 !important;
+        transition: color 0.2s ease !important;
+    }
+
+    .home-fluid .home-header__left .search-form .form-group .search-clear-btn:hover {
+        color: #ffffff !important;
+    }
+
+    .home-fluid .home-header__left .search-form .form-group .form--control:focus {
+        border-color: hsl(var(--base)) !important;
+        box-shadow: 0 0 0 3px hsla(var(--base), 0.1) !important;
+        outline: none !important;
+    }
+
+    .home-fluid .home-header__left .search-form .form-group .search-form-btn {
+        color: rgba(255, 255, 255, 0.8) !important;
+        transition: color 0.3s ease !important;
+        position: absolute !important;
+        left: 15px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 10 !important;
+    }
+
+    .home-fluid .home-header__left .search-form .form-group .search-form-btn:hover {
+        color: rgba(255, 255, 255, 1) !important;
+    }
+
+    /* User Info - Same as Home Page with proper z-index */
+    .home-fluid .home-header__right {
+        position: relative !important;
+        z-index: 1000 !important;
+    }
+
+    .home-fluid .home-header__right .user-info {
+        position: relative !important;
+        z-index: 1001 !important;
+    }
+
+    .home-fluid .home-header__right .user-info__button {
+        border: none !important;
+        transition: all 0.3s ease !important;
+        background: transparent !important;
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 1002 !important;
+    }
+
+    .home-fluid .home-header__right .user-info__button:hover {
+        box-shadow: 0 0 10px rgba(220, 20, 60, 0.4) !important;
+        transform: scale(1.05) !important;
+    }
+
+    .home-fluid .home-header__right .user-info__thumb {
+        border: none !important;
+        position: relative !important;
+        z-index: 1002 !important;
+    }
+
+    .home-fluid .home-header__right .user-info__thumb img {
+        border: none !important;
+    }
+
+    .home-fluid .home-header__right .user-info .user-info-list {
+        position: absolute !important;
+        right: 0 !important;
+        top: calc(100% + 12px) !important;
+        z-index: 9999 !important;
+        background-color: hsl(var(--bg-color)) !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        box-shadow: var(--box-shadow) !important;
+    }
+
+    /* Light Theme Styles - Same as Home Page */
+    [data-theme="light"] .home-header {
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-bottom: 1px solid hsl(var(--border-color)) !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .form--control {
+        background: #ffffff !important;
+        border: 1px solid #e0e0e0 !important;
+        color: #000000 !important;
+        padding: 10px 80px 10px 45px !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .search-clear-btn {
+        color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .search-clear-btn:hover {
+        color: #000000 !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .form--control::placeholder {
+        color: #808080 !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .form--control:focus {
+        border-color: #e0e0e0 !important;
+        background: #ffffff !important;
+        box-shadow: 0 0 0 1px #e0e0e0 !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .search-form-btn {
+        color: rgba(0, 0, 0, 0.7) !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__left .search-form .form-group .search-form-btn:hover {
+        color: rgba(0, 0, 0, 0.9) !important;
+    }
+
+    [data-theme="light"] .home-fluid .home-header__right .user-info__button {
+        border: none !important;
+    }
 </style>
 @endpush

@@ -12,6 +12,34 @@
             @endif
             <span> {{ $comment->comment }}</span>
         </p>
+        @if ($comment->media_path)
+            @php
+                $mediaUrl = asset('assets/comments/' . $comment->media_path);
+            @endphp
+            <div class="comment-media mt-2" data-media-path="{{ $comment->media_path }}" data-media-type="{{ $comment->media_type }}" data-media-url="{{ $mediaUrl }}">
+                @if ($comment->media_type === 'video')
+                    @php
+                        $extension = pathinfo($comment->media_path, PATHINFO_EXTENSION);
+                        $mimeTypes = [
+                            'mp4' => 'video/mp4',
+                            'webm' => 'video/webm',
+                            'ogg' => 'video/ogg',
+                            'avi' => 'video/x-msvideo',
+                            'mov' => 'video/quicktime',
+                            'wmv' => 'video/x-ms-wmv',
+                            'flv' => 'video/x-flv'
+                        ];
+                        $mimeType = $mimeTypes[strtolower($extension)] ?? 'video/mp4';
+                    @endphp
+                    <video controls autoplay loop muted playsinline style="max-width: 100%; max-height: 300px; border-radius: 8px;" preload="auto">
+                        <source src="{{ $mediaUrl }}" type="{{ $mimeType }}">
+                        Your browser does not support the video tag.
+                    </video>
+                @elseif ($comment->media_type === 'gif')
+                    <img src="{{ $mediaUrl }}" alt="GIF" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                @endif
+            </div>
+        @endif
         <div class="reaction-btn">
             @include('Template::partials.comment_reaction')
             <div class="reaction-btn__reply">
@@ -34,6 +62,16 @@
                     <line x1="15" y1="9" x2="15.01" y2="9"></line>
                 </svg>
             </button>
+
+            <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                    <circle cx="12" cy="13" r="3"></circle>
+                </svg>
+            </button>
+
+            <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+            <div class="comment-media-preview d-none"></div>
 
             <div class="emoji-picker-container" style="display: none;">
                 <div class="emoji-picker">

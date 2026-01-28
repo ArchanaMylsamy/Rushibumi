@@ -22,8 +22,7 @@
             <div class="search-form-wrapper">
                 <form class="search-form" action="{{ route('search') }}">
                     <div class="form-group">
-                        <input class="form--control search-input" name="search" type="text" value="{{ request()->search }}"
-                            ">
+                        <input class="form--control search-input" name="search" type="text" value="{{ request()->search }}">
                         <button class="search-form-btn" type="submit">
                             <i class="vti-search"></i>
                         </button>

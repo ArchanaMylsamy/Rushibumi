@@ -1,19 +1,33 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
     <div class="home-body">
-        <!-- Google AdSense - Top Banner (Full Width) -->
-        <div class="adsense-top-banner">
-            <div class="ad-shimmer"></div>
-            <div class="ad-content">
-                <span class="ad-badge">Advertisement</span>
-                <ins class="adsbygoogle"
-                     style="display:block"
-                     data-ad-client="ca-pub-3940256099942544"
-                     data-ad-slot="6300978111"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
+        {{-- Top Banner: Show Feed Ad (Top Position) if available, otherwise show Google AdSense --}}
+        @php
+            $hasTopAds = isset($topAds) && $topAds->count() > 0;
+            // Randomly select one top ad from all available top ads
+            $selectedTopAd = $hasTopAds ? $topAds->random() : null;
+        @endphp
+
+        @if($hasTopAds && $selectedTopAd)
+            {{-- Show Feed Ad as Top Banner (randomly selected) --}}
+            @include($activeTemplate . 'partials.video.top_ad_banner', ['topAd' => $selectedTopAd])
+        @else
+            {{-- Show Google AdSense Banner --}}
+            <div class="adsense-top-banner">
+                <div class="ad-shimmer"></div>
+                <div class="ad-content">
+                    <span class="ad-badge">Advertisement</span>
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-3940256099942544"
+                         data-ad-slot="6300978111"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                </div>
             </div>
-        </div>
+        @endif
+
+        {{-- Top Ad from Feed Ads - will be shown at the beginning of videos grid --}}
  
         @php
             // Create varied pattern: multiple rows, then shorts, then one row, then shorts, etc.
@@ -55,8 +69,80 @@
             @php
                 $groupIndex = 0;
                 $totalGroups = count($videoGroups);
+                $availableFeedAds = isset($feedAds) && $feedAds->count() > 0 ? collect($feedAds) : collect();
+                
+                // Calculate total videos across all groups
+                $totalVideos = $allVideos->count();
+                $totalAds = $availableFeedAds->count();
+                
+                // Create random ad positions - distribute ads randomly throughout all videos
+                // First ad will be shown at the top (position 1), rest distributed randomly
+                $adPositions = [];
+                if ($totalAds > 0 && $totalVideos > 0) {
+                    // Create shuffled list of ads for random distribution
+                    $shuffledAds = $availableFeedAds->shuffle()->values();
+                    
+                    // First ad goes at position 1 (top of the grid)
+                    if ($totalAds > 0) {
+                        $adPositions[1] = $shuffledAds[0];
+                        $usedPositions = [1];
+                        
+                        // Distribute remaining ads randomly throughout videos
+                        if ($totalAds > 1) {
+                            // Calculate spacing for remaining ads
+                            $remainingAds = $totalAds - 1;
+                            $remainingVideos = max(1, $totalVideos - 1); // Exclude position 1
+                            $baseSpacing = floor($remainingVideos / ($remainingAds + 1));
+                            $minGap = max(2, $baseSpacing); // Minimum gap between ads
+                            
+                            for ($i = 1; $i < $totalAds; $i++) {
+                                // Calculate base position (evenly distributed, starting from position 2)
+                                $basePosition = 2 + ($i - 1) * $baseSpacing;
+                                
+                                // Add randomness: vary position by up to ±30% of spacing
+                                $variance = floor($baseSpacing * 0.3);
+                                $randomOffset = $variance > 0 ? rand(-$variance, $variance) : 0;
+                                $position = max(2, min($totalVideos, $basePosition + $randomOffset));
+                                
+                                // Ensure minimum gap from other ads
+                                $attempts = 0;
+                                while ($attempts < 20) {
+                                    $valid = true;
+                                    foreach ($usedPositions as $usedPos) {
+                                        if (abs($position - $usedPos) < $minGap) {
+                                            $valid = false;
+                                            // Try a different position
+                                            $position = max(2, min($totalVideos, $position + ($position < $usedPos ? -1 : 1) * $minGap));
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if ($valid) {
+                                        break;
+                                    }
+                                    $attempts++;
+                                }
+                                
+                                // If still not valid, use base position
+                                if (!$valid) {
+                                    $position = $basePosition;
+                                }
+                                
+                                $usedPositions[] = $position;
+                                $adPositions[$position] = $shuffledAds[$i];
+                            }
+                        }
+                    }
+                    
+                    // Sort positions to ensure ads are inserted in order
+                    ksort($adPositions);
+                }
+                
+                // Initialize counters OUTSIDE the loop so they persist across all video groups
+                $videoCount = 0;
+                $adsShown = 0; // Track how many ads have been shown
             @endphp
- 
+
             {{-- Show shorts at the beginning if there are no videos --}}
             @if ($hasShorts && !$hasVideos)
                 <x-home-body-title icon="vti-short" title="Shorts" />
@@ -72,24 +158,39 @@
                     </div>
                 </section>
             @endif
- 
+
             @foreach ($videoGroups as $videoGroup)
-                {{-- Display Video Group (Multiple rows or single row) --}}
+                {{-- Display Video Group - All videos and ads in ONE continuous grid --}}
                 @if (!blank($videoGroup))
                     @if ($groupIndex == 0)
                         <x-home-body-title icon="vti-video" title="Videos" />
                     @endif
                    
-                    {{-- Chunk the group into rows --}}
-                    @php
-                        $rows = $videoGroup->chunk($videosPerRow);
-                    @endphp
-                   
-                    @foreach ($rows as $row)
-                        <div class="video-wrapper">
-                            @include($activeTemplate . 'partials.video.video_list', ['videos' => $row])
-                        </div>
-                    @endforeach
+                    {{-- ONE video-wrapper for entire group - videos and ads mixed together --}}
+                    <div class="video-wrapper">
+                        @foreach($videoGroup as $videoIndex => $video)
+                            @php
+                                $videoCount++;
+                                $shouldShowAd = false;
+                                $adToShow = null;
+                                
+                                // Check if we should show an ad at this position (random distribution)
+                                if (isset($adPositions[$videoCount])) {
+                                    $adToShow = $adPositions[$videoCount];
+                                    $shouldShowAd = true;
+                                    $adsShown++;
+                                }
+                            @endphp
+                            
+                            {{-- Display the video --}}
+                            @include($activeTemplate . 'partials.video.video_list', ['videos' => collect([$video])])
+                            
+                            {{-- Insert ad at this position if scheduled - randomly distributed in grid --}}
+                            @if($shouldShowAd && $adToShow)
+                                @include($activeTemplate . 'partials.video.feed_ad', ['feedAd' => $adToShow])
+                            @endif
+                        @endforeach
+                    </div>
                 @endif
  
                 {{-- Display Shorts after each video group (between groups, not after the last) --}}
@@ -322,11 +423,13 @@
             // Initialize Google AdSense Ad
             setTimeout(function() {
                 try {
-                    (adsbygoogle = window.adsbygoogle || []).push({});
+                    if (typeof window.adsbygoogle !== 'undefined') {
+                        (window.adsbygoogle = window.adsbygoogle || []).push({});
+                    }
                 } catch (e) {
-                    console.log('AdSense initialization:', e);
+                    // Silently handle AdSense errors - script may not be loaded
                 }
-            }, 100);
+            }, 500);
         });
  
         function playersInitiate() {

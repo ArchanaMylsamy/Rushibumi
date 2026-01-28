@@ -202,6 +202,34 @@
         ]
     },
 
+    "manage_feed_ads": {
+        "title": "Feed Ads",
+        "icon": "las la-image",
+        "menu_active": "admin.feed_ads*",
+        "submenu": [
+            {
+                "keyword": ["feed ads", "feed advertisements", "manage feed ads", "feed ad management", "feed ad control"],
+                "title": "All Feed Ads",
+                "route_name": "admin.feed_ads.index",
+                "menu_active": "admin.feed_ads.index"
+            }
+        ]
+    },
+
+    "manage_video_ads": {
+        "title": "Video Ads",
+        "icon": "las la-video",
+        "menu_active": "admin.video_ads*",
+        "submenu": [
+            {
+                "keyword": ["video ads", "video advertisements", "manage video ads", "video ad management", "video ad control", "pre-roll", "mid-roll", "post-roll"],
+                "title": "All Video Ads",
+                "route_name": "admin.video_ads.index",
+                "menu_active": "admin.video_ads.index"
+            }
+        ]
+    },
+
 
     "manage_videos": {
         "title": "Manage Videos",

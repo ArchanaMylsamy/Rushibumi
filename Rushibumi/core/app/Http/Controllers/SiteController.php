@@ -18,6 +18,8 @@ use App\Models\UserNotification;
 use App\Models\Video;
 use App\Models\VideoFile;
 use App\Models\WatchHistory;
+use App\Models\FeedAd;
+use App\Models\VideoAd;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
@@ -42,8 +44,12 @@ class SiteController extends Controller {
        
         // For pagination, we still need the paginated version for infinite scroll
         $videos = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->paginate(getPaginate());
- 
-        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos', 'allVideos'));
+
+        // Get active feed ads (images, GIFs, and videos)
+        $feedAds = FeedAd::active()->feed()->whereIn('ad_type', [1, 2, 3])->orderBy('priority', 'desc')->get();
+        $topAds = FeedAd::active()->top()->whereIn('ad_type', [1, 2, 3])->orderBy('priority', 'desc')->get();
+
+        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos', 'allVideos', 'feedAds', 'topAds'));
     }
  
     public function search(Request $request) {
@@ -434,99 +440,187 @@ class SiteController extends Controller {
     }
  
     public function fetchAd() {
-        $id    = decrypt(request()->video_id);
-        $video = Video::published()->whereHas('user', function ($query) {
-            $query->active();
-        })->regular()->find($id);
- 
-        if (!$video) {
-            return response()->json(['error' => 'Video not found']);
-        }
- 
-        if ($video->user->monetization_status != Status::MONETIZATION_APPROVED) {
-            return response()->json(['error' => 'The video not available for ads showing']);
-        }
- 
-        $ad = Advertisement::where('status', Status::ENABLE)
-            ->whereHas('categories', function ($query) use ($video) {
-                $query->active()->where('category_id', $video->category_id);
-            })
-            ->where('user_id', '!=', $video->user_id)
-            ->where('status', Status::RUNNING)
-            ->where(function ($query) {
-                $query
-                    ->orWhere(function ($q) {
-                        $q->where('ad_type', Status::IMPRESSION)->where('available_impression', '>', 0);
-                    })
-                    ->orWhere(function ($q) {
-                        $q->where('ad_type', Status::CLICK)->where('available_click', '>', 0);
-                    })
-                    ->orWhere(function ($q) {
-                        $q->where('ad_type', Status::BOTH)->where(function ($q) {
-                            $q->where('available_impression', '>', 0)->orWhere('available_click', '>', 0);
+        try {
+            try {
+                $id = decrypt(request()->video_id);
+            } catch (\Exception $e) {
+                \Log::error('Failed to decrypt video_id in fetchAd: ' . $e->getMessage());
+                return response()->json(['error' => 'Invalid video ID'], 400);
+            }
+            
+            $adType = request()->ad_type; // 1=pre-roll, 2=mid-roll, 3=post-roll
+            
+            $video = Video::published()->whereHas('user', function ($query) {
+                $query->active();
+            })->regular()->find($id);
+
+            if (!$video) {
+                return response()->json(['error' => 'Video not found']);
+            }
+
+            // First, try to get VideoAd (pre-roll, mid-roll, post-roll)
+            // VideoAds are system ads and don't require monetization approval
+            if ($adType) {
+                try {
+                    $videoAd = VideoAd::active()
+                        ->where('ad_type', $adType)
+                        ->whereNotNull('video')
+                        ->where('video', '!=', '')
+                        ->inRandomOrder()
+                        ->first();
+                        
+                    if ($videoAd) {
+                        // Track impression
+                        $videoAd->incrementImpressions();
+                        
+                        // VideoAd videos are stored in video path (same as regular videos)
+                        $videoUrl = asset(getFilePath('video') . '/' . $videoAd->video);
+                        $thumbnail = $videoAd->thumbnail ? getImage(getFilePath('thumbnail') . '/' . $videoAd->thumbnail) : null;
+                        
+                        \Log::info('VideoAd found', [
+                            'ad_id' => $videoAd->id,
+                            'ad_type' => $adType,
+                            'video_url' => $videoUrl,
+                            'video_file' => $videoAd->video
+                        ]);
+                        
+                        return response()->json([
+                            'status' => 'success',
+                            'data'   => [
+                                'ad_id'        => $videoAd->id,
+                                'ad_title'     => $videoAd->title,
+                                'ad_type'      => $videoAd->ad_type, // Use actual ad_type (1=pre-roll, 2=mid-roll, 3=post-roll)
+                                'ad_url'       => $videoAd->url,
+                                'button_label' => 'Visit',
+                                'ad_logo'      => $thumbnail,
+                                'ad_video_src' => $videoUrl,
+                                'action_url'   => $videoAd->url,
+                                'skip_after'   => $videoAd->skip_after,
+                                'is_video_ad'  => true,
+                            ],
+                        ]);
+                    } else {
+                        \Log::info('No VideoAd found', [
+                            'ad_type' => $adType,
+                            'total_active' => VideoAd::active()->count(),
+                            'total_with_type' => VideoAd::active()->where('ad_type', $adType)->count(),
+                            'total_with_video' => VideoAd::active()->where('ad_type', $adType)->whereNotNull('video')->count()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error fetching VideoAd: ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString(),
+                        'ad_type' => $adType
+                    ]);
+                    // Continue to fallback ads
+                }
+            }
+
+            // Fallback to regular Advertisement ads
+            // These require monetization approval
+            if ($video->user->monetization_status != Status::MONETIZATION_APPROVED) {
+                return response()->json(['error' => 'The video not available for ads showing']);
+            }
+
+            $ad = Advertisement::where('status', Status::ENABLE)
+                ->whereHas('categories', function ($query) use ($video) {
+                    $query->active()->where('category_id', $video->category_id);
+                })
+                ->where('user_id', '!=', $video->user_id)
+                ->where('status', Status::RUNNING)
+                ->where(function ($query) {
+                    $query
+                        ->orWhere(function ($q) {
+                            $q->where('ad_type', Status::IMPRESSION)->where('available_impression', '>', 0);
+                        })
+                        ->orWhere(function ($q) {
+                            $q->where('ad_type', Status::CLICK)->where('available_click', '>', 0);
+                        })
+                        ->orWhere(function ($q) {
+                            $q->where('ad_type', Status::BOTH)->where(function ($q) {
+                                $q->where('available_impression', '>', 0)->orWhere('available_click', '>', 0);
+                            });
                         });
-                    });
-            })
-            ->inRandomOrder()
-            ->first();
- 
-        if ($ad) {
-            if ($ad->ad_type == Status::IMPRESSION || $ad->ad_type == Status::BOTH) {
- 
-                $ad->available_impression -= 1;
-                $ad->save();
- 
-                $videoOwner = $video->user;
-                $videoOwner->balance += gs('per_impression_earn');
-                $videoOwner->save();
- 
-                $transaction               = new Transaction();
-                $transaction->user_id      = $videoOwner->id;
-                $transaction->video_id     = $video->id;
-                $transaction->amount       = gs('per_impression_earn');
-                $transaction->post_balance = $videoOwner->balance;
-                $transaction->charge       = 0;
-                $transaction->trx_type     = '+';
-                $transaction->details      = 'Earn form ads';
-                $transaction->trx          = getTrx();
-                $transaction->remark       = 'ads_revenue';
-                $transaction->save();
- 
-                $adAnalysis                   = new AdvertisementAnalytics();
-                $adAnalysis->video_id         = $video->id;
-                $adAnalysis->advertisement_id = $ad->id;
-                $adAnalysis->impression       = Status::YES;
-                $adAnalysis->save();
- 
-                $userNotification            = new UserNotification();
-                $userNotification->user_id   = $videoOwner->id;
-                $userNotification->title     = 'Ads revenue add to your balance';
-                $userNotification->click_url = urlPath('user.transactions');
-                $userNotification->save();
+                })
+                ->inRandomOrder()
+                ->first();
+
+            if ($ad) {
+                if ($ad->ad_type == Status::IMPRESSION || $ad->ad_type == Status::BOTH) {
+
+                    $ad->available_impression -= 1;
+                    $ad->save();
+
+                    $videoOwner = $video->user;
+                    $videoOwner->balance += gs('per_impression_earn');
+                    $videoOwner->save();
+
+                    $transaction               = new Transaction();
+                    $transaction->user_id      = $videoOwner->id;
+                    $transaction->video_id     = $video->id;
+                    $transaction->amount       = gs('per_impression_earn');
+                    $transaction->post_balance = $videoOwner->balance;
+                    $transaction->charge       = 0;
+                    $transaction->trx_type     = '+';
+                    $transaction->details      = 'Earn form ads';
+                    $transaction->trx          = getTrx();
+                    $transaction->remark       = 'ads_revenue';
+                    $transaction->save();
+
+                    $adAnalysis                   = new AdvertisementAnalytics();
+                    $adAnalysis->video_id         = $video->id;
+                    $adAnalysis->advertisement_id = $ad->id;
+                    $adAnalysis->impression       = Status::YES;
+                    $adAnalysis->save();
+
+                    $userNotification            = new UserNotification();
+                    $userNotification->user_id   = $videoOwner->id;
+                    $userNotification->title     = 'Ads revenue add to your balance';
+                    $userNotification->click_url = urlPath('user.transactions');
+                    $userNotification->save();
+                }
+                $action = [];
+                if ($ad->ad_type == Status::CLICK) {
+                    $action = route('redirect.ad', ['id' => encrypt($ad->id), 'video_id' => encrypt($video->id)]);
+                }
+
+                return response()->json([
+                    'status' => 'success',
+                    'data'   => [
+                        'ad_id'        => $ad->id,
+                        'ad_title'     => $ad->title,
+                        'ad_type'      => $ad->ad_type,
+                        'ad_url'       => $ad->url,
+                        'button_label' => $ad->button_label,
+                        'ad_logo'      => getImage(getFilePath('adLogo') . '/' . $ad->logo),
+                        'ad_video_src' => getAd($ad->ad_file, $ad),
+                        'action_url'   => $action,
+                    ],
+                ]);
             }
-            $action = [];
-            if ($ad->ad_type == Status::CLICK) {
-                $action = route('redirect.ad', ['id' => encrypt($ad->id), 'video_id' => encrypt($video->id)]);
-            }
- 
-            return response()->json([
-                'status' => 'success',
-                'data'   => [
-                    'ad_id'        => $ad->id,
-                    'ad_title'     => $ad->title,
-                    'ad_type'      => $ad->ad_type,
-                    'ad_url'       => $ad->url,
-                    'button_label' => $ad->button_label,
-                    'ad_logo'      => getImage(getFilePath('adLogo') . '/' . $ad->logo),
-                    'ad_video_src' => getAd($ad->ad_file, $ad),
-                    'action_url'   => $action,
-                ],
-            ]);
-        } else {
+            
             return response()->json(['error' => 'No available ad']);
+        } catch (\Exception $e) {
+            \Log::error('Error in fetchAd: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return response()->json(['error' => 'An error occurred while fetching ad'], 500);
         }
     }
- 
+    
+    public function videoAdPlay(Request $request) {
+        $request->validate([
+            'ad_id' => 'required|integer|exists:video_ads,id',
+        ]);
+        
+        $videoAd = VideoAd::findOrFail($request->ad_id);
+        $videoAd->incrementPlays();
+        
+        return response()->json(['status' => 'success']);
+    }
+
     public function redirectAd($id, $video_id) {
         $videoId = decrypt($video_id);
         $video   = Video::where('id', $videoId)->published()->public()->whereHas('user', function ($query) {
@@ -582,6 +676,21 @@ class SiteController extends Controller {
         return redirect($ad->url);
     }
  
+    public function feedAdClick(Request $request)
+    {
+        $request->validate([
+            'ad_id' => 'required|integer|exists:feed_ads,id',
+        ]);
+
+        $feedAd = FeedAd::findOrFail($request->ad_id);
+        $feedAd->incrementClicks();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Click tracked successfully',
+        ]);
+    }
+
     public function embedVideo($id = 0, $slug = null) {
         $video = Video::where('id', $id)->with('videoFiles', 'subTitles')->published()->free()->public()->whereHas('user', function ($query) {
             $query->active();

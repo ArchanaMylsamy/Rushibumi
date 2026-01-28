@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model {
 
+    protected $fillable = [
+        'user_id',
+        'video_id',
+        'comment',
+        'parent_id',
+        'replier_user_id',
+        'media_type',
+        'media_path',
+    ];
+
     public function user() {
         return $this->belongsTo(User::class);
     }

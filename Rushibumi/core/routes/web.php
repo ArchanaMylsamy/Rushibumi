@@ -86,6 +86,8 @@ Route::controller('SiteController')->group(function () {
 
     Route::get('fetch-ad', 'fetchAd')->name('fetch.ad');
     Route::get('redirect-ad/{id?}/{video_id}', 'redirectAd')->name('redirect.ad');
+    Route::post('feed-ad-click', 'feedAdClick')->name('feed.ad.click');
+    Route::post('video-ad-play', 'videoAdPlay')->name('video.ad.play');
 
     Route::get('get-video-source/{id}', 'getVideoSource')->name('get.video.source');
  
