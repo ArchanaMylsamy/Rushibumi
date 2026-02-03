@@ -1331,6 +1331,32 @@
                 // Make singleplayer globally accessible for transcript functionality
                 window.singleplayer = singleplayer;
 
+                // YouTube-style PiP: move player to bottom-right; stays when you click Home/other pages
+                (function initPersistentPip() {
+                    var pipContainer = document.getElementById('persistent-pip');
+                    var pipVideoWrap = pipContainer && pipContainer.querySelector('.persistent-pip__video-wrap');
+                    var playerContainer = document.querySelector('.primary__videoPlayer');
+                    if (!pipVideoWrap || !playerContainer) return;
+                    function attachPipButton() {
+                        var pipBtn = document.querySelector('.plyr__control[data-plyr="pip"]');
+                        if (!pipBtn || pipBtn.hasAttribute('data-persistent-pip-bound')) return;
+                        pipBtn.setAttribute('data-persistent-pip-bound', '1');
+                        var newBtn = pipBtn.cloneNode(true);
+                        pipBtn.parentNode.replaceChild(newBtn, pipBtn);
+                        newBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.__pipActive) return;
+                            pipVideoWrap.appendChild(playerContainer);
+                            pipContainer.classList.add('is-active');
+                            pipContainer.setAttribute('aria-hidden', 'false');
+                            window.__pipActive = true;
+                            window.__pipVideoUrl = window.location.href;
+                        });
+                    }
+                    singleplayer.on('ready', attachPipButton);
+                    setTimeout(attachPipButton, 500);
+                })();
 
                 const loader = document.getElementById('loader');
 

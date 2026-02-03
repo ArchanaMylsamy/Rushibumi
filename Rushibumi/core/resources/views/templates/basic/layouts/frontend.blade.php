@@ -10,8 +10,24 @@
                 <!-- ====================== Header Start ========================= -->
                 @include($activeTemplate . 'partials.header')
                 <!-- ====================== Header End ========================= -->
-                @yield('content')
+                <div class="main-content">
+                    @yield('content')
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- YouTube-style persistent PiP: "Back to tab" + Close, stays when navigating -->
+    <div id="persistent-pip" class="persistent-pip" aria-hidden="true">
+        <div class="persistent-pip__inner">
+            <div class="persistent-pip__video-wrap"></div>
+            <button type="button" class="persistent-pip__back-to-tab" title="Back to tab" aria-label="Back to tab">
+                <svg class="persistent-pip__back-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <span class="persistent-pip__back-text">Back to tab</span>
+            </button>
+            <button type="button" class="persistent-pip__close" title="Close" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
         </div>
     </div>
 
@@ -1147,7 +1163,232 @@
         --bg-color: transparent !important;
         --dark: transparent !important;
     }
+
+    /* PiP: exact match to reference – rounded frame, "Back to tab" top-left, Close top-right, full controls at bottom */
+    .persistent-pip {
+        display: none;
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 99999;
+        width: 480px;
+        max-width: calc(100vw - 48px);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+        background: #000;
+    }
+    .persistent-pip.is-active {
+        display: block;
+    }
+    .persistent-pip__inner {
+        position: relative;
+        width: 100%;
+        background: #000;
+    }
+    /* Video area: 16:9, no compression */
+    .persistent-pip__video-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        overflow: hidden;
+    }
+    .persistent-pip__video-wrap video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+        display: block;
+    }
+    .persistent-pip__video-wrap .plyr,
+    .persistent-pip__video-wrap .primary__videoPlayer {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+    .persistent-pip__video-wrap .plyr__video-wrapper,
+    .persistent-pip__video-wrap .plyr video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+    }
+    .persistent-pip__video-wrap .primary__videoPlayer {
+        display: flex;
+        flex-direction: column;
+    }
+    .persistent-pip__video-wrap .primary__videoPlayer .hidden-content,
+    .persistent-pip__video-wrap .primary__videoPlayer .premium-stock {
+        display: none !important;
+    }
+    /* "Back to tab" – top-left, icon + text (reference style) */
+    .persistent-pip__back-to-tab {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        z-index: 10;
+        transition: background 0.2s;
+    }
+    .persistent-pip__back-to-tab:hover {
+        background: rgba(0, 0, 0, 0.85);
+    }
+    .persistent-pip__back-icon {
+        flex-shrink: 0;
+        opacity: 0.95;
+    }
+    .persistent-pip__back-text {
+        white-space: nowrap;
+    }
+    /* Close – top-right, circular X (reference style) */
+    .persistent-pip__close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: background 0.2s;
+    }
+    .persistent-pip__close:hover {
+        background: rgba(0, 0, 0, 0.85);
+    }
+    /* Bottom control bar: dark semi-transparent strip so white icons stand out (reference) */
+    .persistent-pip__video-wrap .plyr__controls {
+        background: linear-gradient(transparent 0%, rgba(0, 0, 0, 0.6) 30%, rgba(0, 0, 0, 0.9) 100%);
+        padding: 8px 10px 10px;
+    }
+    .persistent-pip__video-wrap .plyr__progress,
+    .persistent-pip__video-wrap .plyr__controls .plyr__control {
+        color: #fff;
+    }
+    .persistent-pip__video-wrap .plyr--full-ui .plyr__control[data-plyr="pip"] {
+        display: none;
+    }
 </style>
+@endpush
+
+@push('script')
+<script>
+(function() {
+    'use strict';
+    window.__pipActive = false;
+    window.__pipVideoUrl = null;
+
+    var pipContainer = document.getElementById('persistent-pip');
+    var pipVideoWrap = pipContainer && pipContainer.querySelector('.persistent-pip__video-wrap');
+    var mainContent = document.querySelector('.main-content');
+
+    function pipClose() {
+        window.__pipActive = false;
+        window.__pipVideoUrl = null;
+        if (pipContainer) pipContainer.classList.remove('is-active');
+        if (pipContainer) pipContainer.setAttribute('aria-hidden', 'true');
+    }
+
+    function pipExpand() {
+        var url = window.__pipVideoUrl;
+        if (!url || !pipVideoWrap || !mainContent) { if (url) window.location.href = url; return; }
+        var playerNode = pipVideoWrap.querySelector('.primary__videoPlayer') || pipVideoWrap.firstElementChild;
+        if (!playerNode) { window.location.href = url; return; }
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newMain = doc.querySelector('.main-content');
+                if (!newMain) { window.location.href = url; return; }
+                mainContent.innerHTML = newMain.innerHTML;
+                var slot = mainContent.querySelector('.primary__videoPlayer');
+                if (slot && playerNode.parentNode) {
+                    slot.parentNode.replaceChild(playerNode, slot);
+                }
+                pipContainer.classList.remove('is-active');
+                pipContainer.setAttribute('aria-hidden', 'true');
+                window.__pipActive = false;
+                window.__pipVideoUrl = null;
+                window.history.pushState({}, '', url);
+                var titleEl = doc.querySelector('title');
+                if (titleEl) document.title = titleEl.textContent;
+            })
+            .catch(function() { window.location.href = url; });
+    }
+
+    if (pipContainer) {
+        var closeBtn = pipContainer.querySelector('.persistent-pip__close');
+        var backBtn = pipContainer.querySelector('.persistent-pip__back-to-tab');
+        if (closeBtn) closeBtn.addEventListener('click', pipClose);
+        if (backBtn) backBtn.addEventListener('click', pipExpand);
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!window.__pipActive || !mainContent) return;
+        var a = e.target.closest('a');
+        if (!a || !a.href || a.target === '_blank' || a.getAttribute('data-no-ajax')) return;
+        try {
+            var url = new URL(a.href);
+            if (url.origin !== window.location.origin) return;
+        } catch (err) { return; }
+        var href = a.href;
+        e.preventDefault();
+        e.stopPropagation();
+        fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newMain = doc.querySelector('.main-content');
+                if (newMain) {
+                    mainContent.innerHTML = newMain.innerHTML;
+                    window.history.pushState({ pip: true }, '', href);
+                    var titleEl = doc.querySelector('title');
+                    if (titleEl) document.title = titleEl.textContent;
+                } else {
+                    window.location.href = href;
+                }
+            })
+            .catch(function() { window.location.href = href; });
+    }, true);
+
+    window.addEventListener('popstate', function() {
+        if (!mainContent) { window.location.reload(); return; }
+        if (window.__pipActive) {
+            var href = window.location.href;
+            fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    var newMain = doc.querySelector('.main-content');
+                    if (newMain) mainContent.innerHTML = newMain.innerHTML;
+                    var titleEl = doc.querySelector('title');
+                    if (titleEl) document.title = titleEl.textContent;
+                });
+        } else {
+            window.location.reload();
+        }
+    });
+})();
+</script>
 @endpush
 
 
