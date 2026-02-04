@@ -26,10 +26,10 @@ use Illuminate\Support\Facades\Cookie;
  
 class SiteController extends Controller {
     public function index() {
- 
+
         $pageTitle   = 'Home';
         $sections    = Page::where('tempname', activeTemplate())->where('slug', '/')->first();
-        $seoContents = $sections->seo_content;
+        $seoContents = $sections?->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
  
         $baseVideos = Video::published()->public()->withoutOnlyPlaylist()->withWhereHas('user', function ($query) {
@@ -55,7 +55,7 @@ class SiteController extends Controller {
     public function search(Request $request) {
         $pageTitle   = 'Search';
         $sections    = Page::where('tempname', activeTemplate())->where('slug', '/')->first();
-        $seoContents = $sections->seo_content;
+        $seoContents = $sections?->seo_content;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
         $videos      = Video::searchable(['title', 'category:name', 'description', 'tags:tag'])
             ->published()
@@ -280,7 +280,7 @@ class SiteController extends Controller {
  
     public function cookiePolicy() {
         $cookieContent = Frontend::where('data_keys', 'cookie.data')->first();
-        abort_if($cookieContent->data_values->status != Status::ENABLE, 404);
+        abort_if(!$cookieContent || !$cookieContent->data_values || $cookieContent->data_values->status != Status::ENABLE, 404);
         $pageTitle = 'Cookie Policy';
         $cookie    = Frontend::where('data_keys', 'cookie.data')->first();
         return view('Template::cookie', compact('pageTitle', 'cookie'));

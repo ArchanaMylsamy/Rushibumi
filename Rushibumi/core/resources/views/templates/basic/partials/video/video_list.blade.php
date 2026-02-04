@@ -1,8 +1,11 @@
 @foreach ($videos as $index => $video)
+    @if(is_array($video) || !is_object($video) || !isset($video->id))
+        @php continue; @endphp
+    @endif
     <div class="video-item">
         <a data-video_id="{{ $video->id }}"
             class="video-item__thumb    @if ($video->showEligible() && !$video->audience) autoPlay @endif"
-            href="{{ route('video.play', [$video->id, $video->slug]) }} @if (@$playlist) ?list={{ @$playlist->slug }}&index={{ $index + 1 }} @endif">
+            href="{{ route('video.play', [$video->id, $video->slug ?? '']) }} @if (@$playlist) ?list={{ @$playlist->slug }}&index={{ $index + 1 }} @endif">
             @if ($video->showEligible())
                 <video class="video-player" controls playsinline preload="none"
                     data-poster="{{ getImage(getFilePath('thumbnail') . '/thumb_' . $video->thumb_image) }}">

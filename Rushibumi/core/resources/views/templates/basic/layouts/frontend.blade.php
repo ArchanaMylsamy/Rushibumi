@@ -17,10 +17,11 @@
         </div>
     </div>
 
-    <!-- YouTube-style persistent PiP: "Back to tab" + Close, stays when navigating -->
+    <!-- YouTube-style persistent PiP: draggable, split-screen multi-video, "Back to tab" + Close -->
     <div id="persistent-pip" class="persistent-pip" aria-hidden="true">
+        <div class="persistent-pip__drag-handle" title="Drag to move" aria-label="Drag to move"></div>
         <div class="persistent-pip__inner">
-            <div class="persistent-pip__video-wrap"></div>
+            <div id="persistent-pip__slots" class="persistent-pip__slots"></div>
             <button type="button" class="persistent-pip__back-to-tab" title="Back to tab" aria-label="Back to tab">
                 <svg class="persistent-pip__back-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                 <span class="persistent-pip__back-text">Back to tab</span>
@@ -1164,7 +1165,7 @@
         --dark: transparent !important;
     }
 
-    /* PiP: exact match to reference – rounded frame, "Back to tab" top-left, Close top-right, full controls at bottom */
+    /* PiP: draggable, rounded frame, "Back to tab" top-left, Close top-right */
     .persistent-pip {
         display: none;
         position: fixed;
@@ -1174,17 +1175,101 @@
         width: 480px;
         max-width: calc(100vw - 48px);
         border-radius: 10px;
-        overflow: hidden;
+        overflow: visible;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
         background: #000;
+        user-select: none;
     }
     .persistent-pip.is-active {
         display: block;
     }
+    .persistent-pip.is-split {
+        width: 720px;
+        max-width: calc(100vw - 48px);
+    }
+    .persistent-pip__drag-handle {
+        position: absolute;
+        top: 0;
+        left: 90px;
+        right: 90px;
+        height: 36px;
+        cursor: move;
+        z-index: 12;
+        border-radius: 10px 10px 0 0;
+    }
+    .persistent-pip__drag-handle::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 12px;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.4);
+    }
     .persistent-pip__inner {
         position: relative;
         width: 100%;
+        border-radius: 0 0 10px 10px;
+        overflow: hidden;
         background: #000;
+    }
+    /* Slots container: 1 col single, 2 cols split */
+    .persistent-pip__slots {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        width: 100%;
+    }
+    .persistent-pip__slots.has-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .persistent-pip__slots.has-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .persistent-pip__slots.has-4 {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+    }
+    .persistent-pip__slot {
+        position: relative;
+        background: #000;
+        overflow: hidden;
+    }
+    .persistent-pip__slot-close {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 0;
+        transition: background 0.2s;
+    }
+    /* Hide the container's close button when there are slots (use slot's close button instead) */
+    .persistent-pip.is-active .persistent-pip__close {
+        display: none !important;
+    }
+    /* Show container's close button only when there are no slots */
+    .persistent-pip:not(.is-active) .persistent-pip__close,
+    .persistent-pip.is-active:not(:has(.persistent-pip__slot)) .persistent-pip__close {
+        display: block;
+    }
+    .persistent-pip__slot-close:hover {
+        background: rgba(0, 0, 0, 0.9);
+    }
+    .persistent-pip__slot-close svg {
+        width: 14px;
+        height: 14px;
     }
     /* Video area: 16:9, no compression */
     .persistent-pip__video-wrap {
@@ -1281,8 +1366,57 @@
     .persistent-pip__video-wrap .plyr__controls .plyr__control {
         color: #fff;
     }
-    .persistent-pip__video-wrap .plyr--full-ui .plyr__control[data-plyr="pip"] {
+    .persistent-pip__video-wrap .plyr--full-ui .plyr__control[data-plyr="pip"],
+    .persistent-pip__slot .plyr__control[data-plyr="pip"] {
         display: none;
+    }
+    /* Hide ALL close buttons within PIP video wrap - only show the slot's close button */
+    .persistent-pip__video-wrap .plyr__control[data-plyr="close"],
+    .persistent-pip__video-wrap .plyr__control[aria-label*="close" i],
+    .persistent-pip__video-wrap .plyr__control[aria-label*="Close" i],
+    .persistent-pip__video-wrap button[aria-label*="close" i],
+    .persistent-pip__video-wrap button[aria-label*="Close" i],
+    .persistent-pip__video-wrap .close:not(.persistent-pip__slot-close),
+    .persistent-pip__video-wrap .close-btn:not(.persistent-pip__slot-close),
+    .persistent-pip__video-wrap [class*="close"]:not(.persistent-pip__slot-close),
+    .persistent-pip__video-wrap .plyr__controls .plyr__control:last-child[data-plyr="close"],
+    .persistent-pip__video-wrap .plyr__controls button[title*="close" i],
+    .persistent-pip__video-wrap .plyr__controls button[title*="Close" i],
+    /* Hide any button in top-right corner of video wrap */
+    .persistent-pip__video-wrap .primary__videoPlayer button[style*="right"],
+    .persistent-pip__video-wrap .primary__videoPlayer button[style*="top"],
+    .persistent-pip__video-wrap .plyr button[style*="right"],
+    .persistent-pip__video-wrap .plyr button[style*="top"],
+    /* Hide any button with X icon or close icon */
+    .persistent-pip__video-wrap button svg[viewBox*="18 6"],
+    .persistent-pip__video-wrap button svg path[d*="M18 6"],
+    .persistent-pip__video-wrap button:has(svg path[d*="M18 6"]):not(.persistent-pip__slot-close),
+    /* Hide any absolute positioned button in top-right */
+    .persistent-pip__video-wrap .primary__videoPlayer > button,
+    .persistent-pip__video-wrap .plyr > button,
+    .persistent-pip__video-wrap .plyr__video-wrapper > button,
+    /* Hide buttons with specific classes that might be close buttons */
+    .persistent-pip__video-wrap button[class*="close"]:not(.persistent-pip__slot-close),
+    .persistent-pip__video-wrap button[class*="Close"]:not(.persistent-pip__slot-close),
+    .persistent-pip__video-wrap .plyr__control[class*="close"]:not(.persistent-pip__slot-close) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+    }
+    /* Ensure the slot's close button is always visible and on top */
+    .persistent-pip__slot-close {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+    }
+    /* Keep PIP control visible on main (full) video player */
+    .main-content .primary__videoPlayer .plyr__control[data-plyr="pip"] {
+        display: flex !important;
     }
 </style>
 @endpush
@@ -1293,23 +1427,221 @@
     'use strict';
     window.__pipActive = false;
     window.__pipVideoUrl = null;
+    window.__pipSlots = [];
 
     var pipContainer = document.getElementById('persistent-pip');
-    var pipVideoWrap = pipContainer && pipContainer.querySelector('.persistent-pip__video-wrap');
+    var pipSlotsEl = document.getElementById('persistent-pip__slots');
     var mainContent = document.querySelector('.main-content');
+
+    function updateSlotsClass() {
+        if (!pipSlotsEl) return;
+        var n = window.__pipSlots.length;
+        pipSlotsEl.classList.remove('has-2', 'has-3', 'has-4');
+        if (n >= 2) pipSlotsEl.classList.add('has-' + Math.min(n, 4));
+        if (pipContainer) {
+            if (n >= 2) pipContainer.classList.add('is-split');
+            else pipContainer.classList.remove('is-split');
+        }
+    }
 
     function pipClose() {
         window.__pipActive = false;
         window.__pipVideoUrl = null;
-        if (pipContainer) pipContainer.classList.remove('is-active');
-        if (pipContainer) pipContainer.setAttribute('aria-hidden', 'true');
+        window.__pipSlots = [];
+        if (pipSlotsEl) pipSlotsEl.innerHTML = '';
+        if (pipContainer) {
+            pipContainer.classList.remove('is-active', 'is-split');
+            pipContainer.setAttribute('aria-hidden', 'true');
+            pipContainer.style.left = '';
+            pipContainer.style.top = '';
+            pipContainer.style.right = '';
+            pipContainer.style.bottom = '';
+        }
     }
 
+    function pipRemoveSlot(index) {
+        var slots = window.__pipSlots;
+        if (index < 0 || index >= slots.length) return;
+        var item = slots[index];
+        slots.splice(index, 1);
+        
+        // Clean up observer if it exists
+        if (item.wrapper && item.wrapper._pipCloseObserver) {
+            item.wrapper._pipCloseObserver.disconnect();
+            item.wrapper._pipCloseObserver = null;
+        }
+        
+        if (item.wrapper && item.wrapper.parentNode) item.wrapper.parentNode.removeChild(item.wrapper);
+        if (slots.length === 0) pipClose();
+        else updateSlotsClass();
+    }
+
+    window.__pipAddSlot = function(playerNode, url) {
+        if (!pipSlotsEl || !playerNode) return;
+        
+        // Remove all existing PIP slots - only allow one PIP at a time
+        if (window.__pipSlots && window.__pipSlots.length > 0) {
+            // Remove all existing slots
+            while (window.__pipSlots.length > 0) {
+                var existingSlot = window.__pipSlots[0];
+                if (existingSlot.wrapper && existingSlot.wrapper.parentNode) {
+                    existingSlot.wrapper.parentNode.removeChild(existingSlot.wrapper);
+                }
+                window.__pipSlots.shift();
+            }
+            // Clear the slots container
+            if (pipSlotsEl) {
+                pipSlotsEl.innerHTML = '';
+            }
+        }
+        
+        var slot = document.createElement('div');
+        slot.className = 'persistent-pip__slot';
+        var wrap = document.createElement('div');
+        wrap.className = 'persistent-pip__video-wrap';
+        wrap.appendChild(playerNode);
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'persistent-pip__slot-close';
+        closeBtn.title = 'Close';
+        closeBtn.setAttribute('aria-label', 'Close');
+        closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+        closeBtn.addEventListener('click', function() {
+            var i = Array.prototype.indexOf.call(pipSlotsEl.querySelectorAll('.persistent-pip__slot'), slot);
+            if (i !== -1) pipRemoveSlot(i);
+        });
+        slot.appendChild(wrap);
+        slot.appendChild(closeBtn);
+        pipSlotsEl.appendChild(slot);
+        window.__pipSlots.push({ node: playerNode, url: url, wrapper: slot });
+        window.__pipActive = true;
+        window.__pipVideoUrl = url;
+        updateSlotsClass();
+        if (pipContainer) { pipContainer.classList.add('is-active'); pipContainer.setAttribute('aria-hidden', 'false'); }
+        
+        // Hide any close buttons within the video player that might appear
+        function hideDuplicateCloseButtons() {
+            var videoWrap = slot.querySelector('.persistent-pip__video-wrap');
+            if (videoWrap) {
+                // Find ALL buttons in the video wrap
+                var allButtons = videoWrap.querySelectorAll('button');
+                allButtons.forEach(function(btn) {
+                    // Skip the slot's own close button
+                    if (btn === closeBtn || btn.closest('.persistent-pip__slot-close')) {
+                        return;
+                    }
+                    
+                    // Check if button is a close button by various indicators
+                    var isCloseButton = false;
+                    
+                    // Check aria-label
+                    var ariaLabel = btn.getAttribute('aria-label') || '';
+                    if (ariaLabel.toLowerCase().includes('close')) {
+                        isCloseButton = true;
+                    }
+                    
+                    // Check title
+                    var title = btn.getAttribute('title') || '';
+                    if (title.toLowerCase().includes('close')) {
+                        isCloseButton = true;
+                    }
+                    
+                    // Check data attribute
+                    if (btn.getAttribute('data-plyr') === 'close') {
+                        isCloseButton = true;
+                    }
+                    
+                    // Check if button contains X icon (close icon)
+                    var svg = btn.querySelector('svg');
+                    if (svg) {
+                        var path = svg.querySelector('path');
+                        if (path) {
+                            var pathD = path.getAttribute('d') || '';
+                            // Common close icon paths
+                            if (pathD.includes('M18 6') || pathD.includes('M6 6') || pathD.includes('M18 18')) {
+                                isCloseButton = true;
+                            }
+                        }
+                    }
+                    
+                    // Check class names
+                    var className = btn.className || '';
+                    if (className.toLowerCase().includes('close') && !className.includes('persistent-pip__slot-close')) {
+                        isCloseButton = true;
+                    }
+                    
+                    // Check if button is positioned in top-right (likely a close button)
+                    var rect = btn.getBoundingClientRect();
+                    var wrapRect = videoWrap.getBoundingClientRect();
+                    var isTopRight = rect.top < wrapRect.top + 50 && rect.right > wrapRect.right - 50;
+                    
+                    // Also check computed styles for absolute positioning in top-right
+                    var computedStyle = window.getComputedStyle(btn);
+                    var isAbsoluteTopRight = computedStyle.position === 'absolute' && 
+                                           (computedStyle.top === '0px' || parseInt(computedStyle.top) < 50) &&
+                                           (computedStyle.right === '0px' || parseInt(computedStyle.right) < 50);
+                    
+                    // Check if button has X icon (even if not detected by other means)
+                    var hasXIcon = false;
+                    var svgInBtn = btn.querySelector('svg');
+                    if (svgInBtn) {
+                        var paths = svgInBtn.querySelectorAll('path');
+                        paths.forEach(function(p) {
+                            var d = p.getAttribute('d') || '';
+                            // X icon typically has two diagonal lines crossing
+                            if ((d.includes('M18 6') && d.includes('6 18')) || 
+                                (d.includes('M6 6') && d.includes('l12 12')) ||
+                                (d.includes('18 6') && d.includes('6 18'))) {
+                                hasXIcon = true;
+                            }
+                        });
+                    }
+                    
+                    if (isCloseButton || hasXIcon || isTopRight || isAbsoluteTopRight) {
+                        btn.style.display = 'none';
+                        btn.style.visibility = 'hidden';
+                        btn.style.opacity = '0';
+                        btn.style.pointerEvents = 'none';
+                        btn.style.position = 'absolute';
+                        btn.style.left = '-9999px';
+                        btn.style.width = '0';
+                        btn.style.height = '0';
+                        btn.setAttribute('data-pip-hidden', 'true');
+                    }
+                });
+            }
+        }
+        
+        // Hide immediately
+        hideDuplicateCloseButtons();
+        
+        // Hide after a delay (in case buttons are added dynamically)
+        setTimeout(hideDuplicateCloseButtons, 100);
+        setTimeout(hideDuplicateCloseButtons, 500);
+        
+        // Watch for dynamically added close buttons
+        if (slot.querySelector('.persistent-pip__video-wrap')) {
+            var observer = new MutationObserver(function(mutations) {
+                hideDuplicateCloseButtons();
+            });
+            observer.observe(slot, {
+                childList: true,
+                subtree: true,
+                attributes: false
+            });
+            
+            // Store observer on slot for cleanup if needed
+            slot._pipCloseObserver = observer;
+        }
+    };
+
     function pipExpand() {
-        var url = window.__pipVideoUrl;
-        if (!url || !pipVideoWrap || !mainContent) { if (url) window.location.href = url; return; }
-        var playerNode = pipVideoWrap.querySelector('.primary__videoPlayer') || pipVideoWrap.firstElementChild;
-        if (!playerNode) { window.location.href = url; return; }
+        var slots = window.__pipSlots;
+        if (slots.length === 0) { pipClose(); return; }
+        var first = slots[0];
+        var url = first.url;
+        var playerNode = first.node;
+        if (!url || !mainContent) { if (url) window.location.href = url; return; }
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' } })
             .then(function(r) { return r.text(); })
             .then(function(html) {
@@ -1322,10 +1654,16 @@
                 if (slot && playerNode.parentNode) {
                     slot.parentNode.replaceChild(playerNode, slot);
                 }
-                pipContainer.classList.remove('is-active');
-                pipContainer.setAttribute('aria-hidden', 'true');
-                window.__pipActive = false;
-                window.__pipVideoUrl = null;
+                pipRemoveSlot(0);
+                if (window.__pipSlots.length === 0) {
+                    pipContainer.classList.remove('is-active');
+                    pipContainer.setAttribute('aria-hidden', 'true');
+                    window.__pipActive = false;
+                    window.__pipVideoUrl = null;
+                } else {
+                    window.__pipVideoUrl = window.__pipSlots[0].url;
+                    updateSlotsClass();
+                }
                 window.history.pushState({}, '', url);
                 var titleEl = doc.querySelector('title');
                 if (titleEl) document.title = titleEl.textContent;
@@ -1338,6 +1676,76 @@
         var backBtn = pipContainer.querySelector('.persistent-pip__back-to-tab');
         if (closeBtn) closeBtn.addEventListener('click', pipClose);
         if (backBtn) backBtn.addEventListener('click', pipExpand);
+    }
+
+    (function initPipDrag() {
+        var handle = pipContainer && pipContainer.querySelector('.persistent-pip__drag-handle');
+        if (!handle) return;
+        var dragging = false;
+        var startX, startY, startLeft, startTop;
+
+        function getRect() {
+            var r = pipContainer.getBoundingClientRect();
+            var br = document.documentElement.getBoundingClientRect();
+            return { left: r.left, top: r.top, right: br.right - r.right, bottom: br.bottom - r.bottom };
+        }
+
+        function applyPosition(left, top) {
+            pipContainer.style.left = left + 'px';
+            pipContainer.style.top = top + 'px';
+            pipContainer.style.right = 'auto';
+            pipContainer.style.bottom = 'auto';
+        }
+
+        handle.addEventListener('mousedown', function(e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            var r = getRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = r.left;
+            startTop = r.top;
+            dragging = true;
+            applyPosition(startLeft, startTop);
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            var dx = e.clientX - startX;
+            var dy = e.clientY - startY;
+            var left = Math.max(0, Math.min(window.innerWidth - pipContainer.offsetWidth, startLeft + dx));
+            var top = Math.max(0, Math.min(window.innerHeight - pipContainer.offsetHeight, startTop + dy));
+            applyPosition(left, top);
+        });
+
+        document.addEventListener('mouseup', function() {
+            dragging = false;
+        });
+    })();
+
+    function initMainContentPlayer() {
+        if (!mainContent || typeof Plyr === 'undefined') return;
+        var playerContainer = mainContent.querySelector('.primary__videoPlayer');
+        var videoEl = mainContent.querySelector('.primary__videoPlayer .video-player');
+        if (!playerContainer || !videoEl) return;
+        if (videoEl.plyr) return;
+        var player = new Plyr(videoEl, {
+            controls: ['rewind', 'play', 'fast-forward', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen', 'pip'],
+            ratio: '16:9',
+            hideControls: false
+        });
+        player.on('ready', function() {
+            var pipBtn = mainContent.querySelector('.plyr__control[data-plyr="pip"]');
+            if (pipBtn && !pipBtn.hasAttribute('data-persistent-pip-bound')) {
+                pipBtn.setAttribute('data-persistent-pip-bound', '1');
+                pipBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    if (window.__pipAddSlot) window.__pipAddSlot(playerContainer, window.location.href);
+                });
+            }
+        });
     }
 
     document.addEventListener('click', function(e) {
@@ -1362,6 +1770,7 @@
                     window.history.pushState({ pip: true }, '', href);
                     var titleEl = doc.querySelector('title');
                     if (titleEl) document.title = titleEl.textContent;
+                    setTimeout(initMainContentPlayer, 100);
                 } else {
                     window.location.href = href;
                 }
@@ -1379,7 +1788,10 @@
                     var parser = new DOMParser();
                     var doc = parser.parseFromString(html, 'text/html');
                     var newMain = doc.querySelector('.main-content');
-                    if (newMain) mainContent.innerHTML = newMain.innerHTML;
+                    if (newMain) {
+                        mainContent.innerHTML = newMain.innerHTML;
+                        setTimeout(initMainContentPlayer, 100);
+                    }
                     var titleEl = doc.querySelector('title');
                     if (titleEl) document.title = titleEl.textContent;
                 });

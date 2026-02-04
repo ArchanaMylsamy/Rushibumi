@@ -4,7 +4,9 @@
     <div class="play-body">
         <div class="play-video">
             <div class="primary ps-0">
-                <div class="primary__videoPlayer video-item__thumb mainVideo" data-price="{{ $video->price }}"
+                <div class="primary__player-area" id="primary-player-area">
+                    <div class="primary__player-slot primary__player-slot--main">
+                        <div class="primary__videoPlayer video-item__thumb mainVideo" data-price="{{ $video->price }}"
                     data-video-id="{{ $video->id }}" data-item_name="{{ $video->title }}">
                     @if ($purchasedTrue && $video->audience)
                         <div class="hidden-content ">
@@ -69,10 +71,43 @@
                         </div>
                     @endif
                 </div>
+                    </div>
+                    <div class="primary__player-slot primary__player-slot--second" id="split-second-slot">
+                        <div class="split-slot-placeholder" id="split-placeholder">
+                            <span class="split-placeholder__icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M10 2v20M2 10h20"/></svg>
+                            </span>
+                            <p class="split-placeholder__text">@lang('Choose a video to play here')</p>
+                            <div class="split-placeholder__search">
+                                <div class="input-group">
+                                    <input type="text" class="form--control" id="split-search-input" placeholder="@lang('Search videos...')" autocomplete="off">
+                                    <button type="button" class="btn btn--base btn--sm" id="split-search-btn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                    </button>
+                                </div>
+                                <div class="split-search-results" id="split-search-results"></div>
+                            </div>
+                            <p class="split-placeholder__hint">@lang('Or click a related video from the sidebar')</p>
+                        </div>
+                        <div class="split-slot-player" id="split-slot-player"></div>
+                    </div>
+                </div>
+                <div class="primary__player-actions">
+                    <button type="button" class="btn btn--sm btn--base split-view-toggle" id="split-view-toggle" title="@lang('Split view')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M10 2v20M2 10h20"/></svg>
+                        <span>@lang('Split view')</span>
+                    </button>
+                    <button type="button" class="btn btn--sm btn-outline--base split-view-back d-none" id="split-view-back" title="@lang('Back to normal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 12l6-6m-6 6l6 6"/></svg>
+                        <span>@lang('Back to normal')</span>
+                    </button>
+                </div>
 
                 <div class="ad-wrapper position-relative adVideo d-none ">
                 </div>
 
+                <div class="primary__content-area" id="primary-content-area">
+                    <div class="primary__slot-content primary__slot-content--main">
                 <div class="primary__video-content">
                     <h4 class="primary__vtitle">{{ __($video->title) }}</h4>
 
@@ -236,7 +271,7 @@
                         @endif
                     </div>
 
-                    <div class="primary__comment d-none d-xl-block">
+                    <div class="primary__comment d-none d-xl-block" data-video-id="{{ $video->id }}">
                         <div class="top">
                             <h5 class="comment-number"><span class="commentCount">{{ count($video->allComments) }}</span>
                                 @lang('Comments')</h5>
@@ -265,7 +300,7 @@
                                         alt="image">
                                 </span>
 
-                                <form class="comment-form" method="post">
+                                <form class="comment-form" method="post" action="{{ route('user.comment.submit', $video->id) }}" data-video-id="{{ $video->id }}">
                                     @csrf
                                     <div class="form-group position-relative">
 
@@ -328,7 +363,7 @@
                     </div>
                 </div>
 
-                <div class="primary__comment-list comment-box__content d-none d-xl-block">
+                <div class="primary__comment-list comment-box__content d-none d-xl-block" data-video-id="{{ $video->id }}">
                     <div class="comment-bow-wrapper">
                         @include($activeTemplate . 'partials.video.comments')
                     </div>
@@ -336,8 +371,11 @@
                 <div class="text-center spinner mt-4 d-none w-100" id="loading-spinner">
                     <i class="las la-spinner"></i>
                 </div>
+                    </div>
+                    <div class="primary__slot-content primary__slot-content--second" id="split-second-content"></div>
+                </div>
             </div>
-            <div class="secondary">
+            <div class="secondary" id="secondary-related">
 
                 @if (@$relatedPlaylistVideos)
                     <div class="card custom--card">
@@ -564,6 +602,340 @@
 @push('style')
    <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/play-video.css') }}">
    <style>
+       /* Split view: two videos side by side, same design */
+       .primary__player-area {
+           display: block;
+           width: 100%;
+       }
+       .primary__player-area.is-split {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 16px;
+           align-items: start;
+           width: 100%;
+           box-sizing: border-box;
+       }
+       .primary__player-area.is-split .primary__player-slot--main,
+       .primary__player-area.is-split .primary__player-slot--second {
+           width: 100%;
+           max-width: 100%;
+           min-width: 0;
+           box-sizing: border-box;
+           overflow: hidden;
+       }
+       .primary__player-slot {
+           width: 100%;
+           min-width: 0;
+           display: flex;
+           flex-direction: column;
+           box-sizing: border-box;
+       }
+       .primary__player-slot--main {
+           min-width: 0;
+           max-width: 100%;
+           overflow: hidden;
+       }
+       .primary__player-area.is-split .primary__player-slot--main .primary__videoPlayer,
+       .primary__player-area.is-split .primary__player-slot--main .video-item__thumb {
+           width: 100% !important;
+           max-width: 100% !important;
+           min-width: 0 !important;
+           aspect-ratio: 16 / 9;
+           box-sizing: border-box;
+       }
+       .primary__player-slot--second {
+           display: none;
+           min-width: 0;
+           max-width: 100%;
+           overflow: hidden;
+       }
+       .primary__player-area.is-split .primary__player-slot--second {
+           display: flex;
+       }
+       .primary__player-slot--second .primary__videoPlayer,
+       .primary__player-slot--second .video-item__thumb {
+           width: 100% !important;
+           max-width: 100% !important;
+           min-width: 0 !important;
+           aspect-ratio: 16 / 9;
+           box-sizing: border-box;
+       }
+       .split-slot-placeholder {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           min-height: 300px;
+           background: linear-gradient(135deg, hsl(var(--dark)) 0%, hsl(var(--dark) / 0.95) 100%);
+           border: 2px dashed rgba(255, 255, 255, 0.15);
+           border-radius: 12px;
+           padding: 32px 24px;
+           text-align: center;
+           position: relative;
+           overflow: hidden;
+       }
+       .split-slot-placeholder::before {
+           content: '';
+           position: absolute;
+           top: 0;
+           left: 0;
+           right: 0;
+           bottom: 0;
+           background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+           pointer-events: none;
+       }
+       .split-slot-placeholder.hidden {
+           display: none;
+       }
+       .split-placeholder__icon {
+           color: rgba(255, 255, 255, 0.5);
+           margin-bottom: 16px;
+           position: relative;
+           z-index: 1;
+       }
+       .split-placeholder__text {
+           margin: 0 0 20px 0;
+           font-size: 15px;
+           font-weight: 500;
+           color: rgba(255, 255, 255, 0.8);
+           position: relative;
+           z-index: 1;
+       }
+       .split-placeholder__hint {
+           margin: 16px 0 0 0;
+           font-size: 12px;
+           color: rgba(255, 255, 255, 0.5);
+           position: relative;
+           z-index: 1;
+       }
+       .split-placeholder__search {
+           width: 100%;
+           max-width: 400px;
+           position: relative;
+           z-index: 1;
+       }
+       .split-placeholder__search .input-group {
+           display: flex;
+           gap: 8px;
+           margin-bottom: 12px;
+       }
+       .split-placeholder__search .form--control {
+           flex: 1;
+           background: rgba(255, 255, 255, 0.08);
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           color: hsl(var(--white));
+           padding: 10px 14px;
+           border-radius: 8px;
+           font-size: 14px;
+       }
+       .split-placeholder__search .form--control:focus {
+           background: rgba(255, 255, 255, 0.12);
+           border-color: hsl(var(--base));
+           outline: none;
+       }
+       .split-placeholder__search .form--control::placeholder {
+           color: rgba(255, 255, 255, 0.4);
+       }
+       .split-placeholder__search .btn {
+           padding: 10px 16px;
+           border-radius: 8px;
+           white-space: nowrap;
+       }
+       .split-search-results {
+           display: none;
+           position: absolute;
+           top: 100%;
+           left: 0;
+           right: 0;
+           background: hsl(var(--dark));
+           border: 1px solid rgba(255, 255, 255, 0.1);
+           border-radius: 8px;
+           margin-top: 8px;
+           max-height: 300px;
+           overflow-y: auto;
+           z-index: 1000;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+       }
+       .split-search-results.show {
+           display: block;
+       }
+       .split-search-results__item {
+           padding: 12px 16px;
+           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+           cursor: pointer;
+           transition: background 0.2s;
+           display: flex;
+           align-items: center;
+           gap: 12px;
+       }
+       .split-search-results__item:hover {
+           background: rgba(255, 255, 255, 0.05);
+       }
+       .split-search-results__item:last-child {
+           border-bottom: none;
+       }
+       .split-search-results__thumb {
+           width: 80px;
+           height: 45px;
+           border-radius: 4px;
+           object-fit: cover;
+           flex-shrink: 0;
+       }
+       .split-search-results__info {
+           flex: 1;
+           min-width: 0;
+       }
+       .split-search-results__title {
+           font-size: 14px;
+           font-weight: 500;
+           color: hsl(var(--white));
+           margin: 0 0 4px 0;
+           overflow: hidden;
+           text-overflow: ellipsis;
+           white-space: nowrap;
+       }
+       .split-search-results__meta {
+           font-size: 12px;
+           color: rgba(255, 255, 255, 0.6);
+       }
+       .split-search-results__empty {
+           padding: 24px;
+           text-align: center;
+           color: rgba(255, 255, 255, 0.5);
+           font-size: 14px;
+       }
+       .split-search-results__loading {
+           padding: 24px;
+           text-align: center;
+           color: rgba(255, 255, 255, 0.5);
+           font-size: 14px;
+       }
+       .split-slot-player {
+           display: none;
+           width: 100%;
+       }
+       .split-slot-player.has-player {
+           display: block;
+       }
+       .primary__player-actions {
+           display: flex;
+           align-items: center;
+           gap: 10px;
+           margin-top: 10px;
+           flex-wrap: wrap;
+       }
+       .primary__player-actions .split-view-back.d-none {
+           display: none !important;
+       }
+       .primary__player-area.is-split ~ .primary__player-actions .split-view-toggle {
+           display: none;
+       }
+       .primary__player-area.is-split ~ .primary__player-actions .split-view-back {
+           display: inline-flex !important;
+       }
+       /* Ensure video player containers don't overflow */
+       .primary__player-area.is-split .primary__player-slot--main,
+       .primary__player-area.is-split .primary__player-slot--second {
+           position: relative;
+       }
+       .primary__player-area.is-split .primary__player-slot--main *,
+       .primary__player-area.is-split .primary__player-slot--second * {
+           max-width: 100%;
+           box-sizing: border-box;
+       }
+       .primary__player-area.is-split .primary__player-slot--main video,
+       .primary__player-area.is-split .primary__player-slot--second video,
+       .primary__player-area.is-split .primary__player-slot--main .video-player,
+       .primary__player-area.is-split .primary__player-slot--second .video-player {
+           width: 100% !important;
+           max-width: 100% !important;
+           height: auto !important;
+           display: block;
+           object-fit: contain;
+       }
+       /* Ensure Plyr player respects container */
+       .primary__player-area.is-split .primary__player-slot--main .plyr,
+       .primary__player-area.is-split .primary__player-slot--second .plyr {
+           width: 100% !important;
+           max-width: 100% !important;
+       }
+       @media (max-width: 767px) {
+           .primary__player-area.is-split {
+               grid-template-columns: 1fr;
+           }
+       }
+
+       /* Content area: two columns in split view (main video content + comments | right video content + comments) */
+       .primary__content-area {
+           width: 100%;
+           box-sizing: border-box;
+       }
+       .primary__content-area.is-split {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 16px;
+           align-items: start;
+           width: 100%;
+           box-sizing: border-box;
+       }
+       .primary__content-area.is-split .primary__slot-content--main,
+       .primary__content-area.is-split .primary__slot-content--second {
+           width: 100%;
+           max-width: 100%;
+           min-width: 0;
+           box-sizing: border-box;
+           overflow: hidden;
+       }
+       .primary__content-area.is-split .primary__slot-content--main > *,
+       .primary__content-area.is-split .primary__slot-content--second > * {
+           max-width: 100%;
+           box-sizing: border-box;
+       }
+       /* Ensure video content area doesn't overflow */
+       .primary__player-area.is-split .primary__player-slot--main .primary__video-content,
+       .primary__player-area.is-split .primary__player-slot--second .primary__video-content {
+           width: 100%;
+           max-width: 100%;
+           overflow-wrap: break-word;
+           word-wrap: break-word;
+       }
+       .primary__player-area.is-split .primary__player-slot--main .primary__title,
+       .primary__player-area.is-split .primary__player-slot--second .primary__title {
+           width: 100%;
+           max-width: 100%;
+           overflow-wrap: break-word;
+           word-wrap: break-word;
+       }
+       .primary__player-area.is-split .primary__player-slot--main .primary__action,
+       .primary__player-area.is-split .primary__player-slot--second .primary__action {
+           width: 100%;
+           max-width: 100%;
+           flex-wrap: wrap;
+       }
+       .primary__slot-content--second {
+           display: none;
+       }
+       .primary__content-area.is-split .primary__slot-content--second:not(:empty) {
+           display: block;
+       }
+       @media (max-width: 767px) {
+           .primary__content-area.is-split {
+               grid-template-columns: 1fr;
+           }
+       }
+
+       /* Hide related videos sidebar when split view has a video in the right slot */
+       .play-video.split-has-right-video .secondary {
+           display: none !important;
+       }
+       /* In split view: show comments in each slot individually, hide any common/shared comment section */
+       .primary__content-area.is-split .primary__slot-content--main .primary__comment,
+       .primary__content-area.is-split .primary__slot-content--main .primary__comment-list,
+       .primary__content-area.is-split .primary__slot-content--second .primary__comment,
+       .primary__content-area.is-split .primary__slot-content--second .primary__comment-list {
+           display: block !important;
+       }
+
        /* Embed share item styling */
        .custom--modal .modal-body .share-item.embed {
            background: #6c757d;
@@ -1331,14 +1703,12 @@
                 // Make singleplayer globally accessible for transcript functionality
                 window.singleplayer = singleplayer;
 
-                // YouTube-style PiP: move player to bottom-right; stays when you click Home/other pages
+                // YouTube-style PiP: move player to bottom-right; split-screen when adding another video
                 (function initPersistentPip() {
-                    var pipContainer = document.getElementById('persistent-pip');
-                    var pipVideoWrap = pipContainer && pipContainer.querySelector('.persistent-pip__video-wrap');
-                    var playerContainer = document.querySelector('.primary__videoPlayer');
-                    if (!pipVideoWrap || !playerContainer) return;
+                    var playerContainer = document.querySelector('.primary__player-slot--main .primary__videoPlayer');
+                    if (!playerContainer) return;
                     function attachPipButton() {
-                        var pipBtn = document.querySelector('.plyr__control[data-plyr="pip"]');
+                        var pipBtn = document.querySelector('.primary__player-slot--main .plyr__control[data-plyr="pip"]');
                         if (!pipBtn || pipBtn.hasAttribute('data-persistent-pip-bound')) return;
                         pipBtn.setAttribute('data-persistent-pip-bound', '1');
                         var newBtn = pipBtn.cloneNode(true);
@@ -1346,16 +1716,592 @@
                         newBtn.addEventListener('click', function(e) {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (window.__pipActive) return;
-                            pipVideoWrap.appendChild(playerContainer);
-                            pipContainer.classList.add('is-active');
-                            pipContainer.setAttribute('aria-hidden', 'false');
-                            window.__pipActive = true;
-                            window.__pipVideoUrl = window.location.href;
+                            if (window.__pipAddSlot) window.__pipAddSlot(playerContainer, window.location.href);
                         });
                     }
                     singleplayer.on('ready', attachPipButton);
                     setTimeout(attachPipButton, 500);
+                })();
+
+                // Split view: two videos side by side, related video loads in second slot; comments below each video; hide related sidebar when right has video
+                (function initSplitView() {
+                    var playerArea = document.getElementById('primary-player-area');
+                    var contentArea = document.getElementById('primary-content-area');
+                    var secondSlot = document.getElementById('split-second-slot');
+                    var secondContent = document.getElementById('split-second-content');
+                    var placeholder = document.getElementById('split-placeholder');
+                    var slotPlayer = document.getElementById('split-slot-player');
+                    var btnSplit = document.getElementById('split-view-toggle');
+                    var btnBack = document.getElementById('split-view-back');
+                    var playVideoEl = document.querySelector('.play-video');
+                    var splitSecondPlyr = null;
+
+                    if (!playerArea || !secondSlot || !slotPlayer || !btnSplit || !btnBack) return;
+
+                    function loadVideoInSecondSlot(url) {
+                        if (!url || !slotPlayer || !placeholder) {
+                            console.error('loadVideoInSecondSlot: Missing required parameters', { url: !!url, slotPlayer: !!slotPlayer, placeholder: !!placeholder });
+                            return;
+                        }
+                        
+                        // Validate URL format
+                        try {
+                            var urlObj = new URL(url, window.location.origin);
+                            if (!urlObj.pathname.match(/\/play\/\d+/)) {
+                                console.error('loadVideoInSecondSlot: Invalid video URL format', url);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('loadVideoInSecondSlot: Invalid URL', url, e);
+                            return;
+                        }
+                        
+                        // Show loading state
+                        placeholder.classList.remove('hidden');
+                        var originalPlaceholderText = placeholder.querySelector('.split-placeholder__text');
+                        if (originalPlaceholderText) {
+                            originalPlaceholderText.textContent = '@lang("Loading video...")';
+                        }
+                        
+                        console.log('Loading video in second slot:', url);
+                        
+                        fetch(url, { 
+                            headers: { 
+                                'X-Requested-With': 'XMLHttpRequest', 
+                                'Accept': 'text/html',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            credentials: 'same-origin'
+                        })
+                            .then(function(r) {
+                                console.log('Response status:', r.status, r.statusText);
+                                if (!r.ok) {
+                                    if (r.status === 404) {
+                                        throw new Error('Video not found (404)');
+                                    } else if (r.status === 403) {
+                                        throw new Error('Access denied (403)');
+                                    } else if (r.status >= 500) {
+                                        throw new Error('Server error (' + r.status + ')');
+                                    } else {
+                                        throw new Error('HTTP error! status: ' + r.status);
+                                    }
+                                }
+                                return r.text();
+                            })
+                            .then(function(html) {
+                                // Check if response is an error page
+                                if (!html || html.length < 100) {
+                                    throw new Error('Empty or invalid response received');
+                                }
+                                
+                                // Check for error pages (even when status is 200 OK)
+                                // Laravel/application error pages often return 200 with error HTML
+                                var isErrorPage = false;
+                                var foundIndicator = '';
+                                
+                                // Quick check: if HTML is too short, it's likely an error
+                                if (html.length < 500) {
+                                    console.warn('Response is suspiciously short:', html.length);
+                                }
+                                
+                                // Check for common error page patterns
+                                var errorPatterns = [
+                                    { pattern: /500.*Internal server error/i, name: '500 Internal Server Error' },
+                                    { pattern: /Sorry!.*Internal server error/i, name: 'Sorry Internal Server Error' },
+                                    { pattern: /ModelNotFoundException/i, name: 'ModelNotFoundException' },
+                                    { pattern: /NotFoundHttpException/i, name: 'NotFoundHttpException' },
+                                    { pattern: /MethodNotAllowedHttpException/i, name: 'MethodNotAllowedHttpException' },
+                                    { pattern: /Whoops.*There was an error/i, name: 'Whoops Error' },
+                                    { pattern: /ErrorException/i, name: 'ErrorException' },
+                                    { pattern: /FatalErrorException/i, name: 'FatalErrorException' },
+                                    { pattern: /Something went wrong.*We're working on fixing it/i, name: 'Something went wrong' }
+                                ];
+                                
+                                for (var i = 0; i < errorPatterns.length; i++) {
+                                    if (errorPatterns[i].pattern.test(html)) {
+                                        // Additional check: make sure it's not just text in normal content
+                                        // Error pages usually have these in prominent positions
+                                        var errorContext = html.match(errorPatterns[i].pattern);
+                                        if (errorContext) {
+                                            // Check if it's near common error page elements
+                                            var errorIndex = html.indexOf(errorContext[0]);
+                                            var nearbyText = html.substring(Math.max(0, errorIndex - 100), Math.min(html.length, errorIndex + 200));
+                                            
+                                            if (nearbyText.includes('Go to Home') || 
+                                                nearbyText.includes('<!DOCTYPE') || 
+                                                nearbyText.includes('<html') ||
+                                                nearbyText.includes('error-page') ||
+                                                nearbyText.match(/<h[1-6][^>]*>.*500/i)) {
+                                                isErrorPage = true;
+                                                foundIndicator = errorPatterns[i].name;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Also check if expected video content is missing
+                                var hasVideoContent = html.includes('primary__videoPlayer') || 
+                                                     html.includes('video-player') || 
+                                                     html.includes('primary__player-area') ||
+                                                     html.includes('play-video');
+                                
+                                // If we don't have video content AND we have error indicators, it's definitely an error
+                                if (!hasVideoContent && (html.includes('500') || html.includes('Internal server error') || html.includes('Sorry!'))) {
+                                    isErrorPage = true;
+                                    foundIndicator = 'Missing video content with error indicators';
+                                }
+                                
+                                if (isErrorPage) {
+                                    console.error('❌ Server error page detected in response');
+                                    console.error('Indicator:', foundIndicator);
+                                    console.error('Response preview (first 1000 chars):', html.substring(0, 1000));
+                                    
+                                    // Try to extract error details from the HTML
+                                    var errorDetails = '';
+                                    try {
+                                        var tempDoc = new DOMParser().parseFromString(html, 'text/html');
+                                        var errorText = tempDoc.querySelector('h1, h2, .error-message, [class*="error"]');
+                                        if (errorText) {
+                                            errorDetails = errorText.textContent.trim().substring(0, 100);
+                                        }
+                                    } catch (e) {
+                                        // Ignore parsing errors
+                                    }
+                                    
+                                    var errorMessage = 'Server error page received: ' + foundIndicator;
+                                    if (errorDetails) {
+                                        errorMessage += ' - ' + errorDetails;
+                                    }
+                                    
+                                    throw new Error(errorMessage);
+                                }
+                                
+                                // Log success for debugging
+                                if (hasVideoContent) {
+                                    console.log('✅ Valid video content detected in response');
+                                }
+                                
+                                try {
+                                    var parser = new DOMParser();
+                                    var doc = parser.parseFromString(html, 'text/html');
+                                    
+                                    // Check for error indicators in parsed document
+                                    var errorTitle = doc.querySelector('title');
+                                    if (errorTitle && (errorTitle.textContent.includes('500') || errorTitle.textContent.includes('Error'))) {
+                                        throw new Error('Error page detected');
+                                    }
+                                    
+                                    var mainContent = doc.querySelector('.main-content__above') || doc.querySelector('.main-content');
+                                    if (!mainContent) {
+                                        throw new Error('Main content area not found in response');
+                                    }
+                                    
+                                    var playerEl = mainContent.querySelector('.primary__videoPlayer');
+                                    if (!playerEl) {
+                                        // Check if there's an error message or if video is not accessible
+                                        var errorMsg = mainContent.querySelector('.alert-danger, .error-message, [class*="error"]');
+                                        if (errorMsg) {
+                                            throw new Error('Video not accessible: ' + (errorMsg.textContent || 'Unknown error'));
+                                        }
+                                        throw new Error('Video player element not found in response. The video may not be available.');
+                                    }
+                                    
+                                    // Check if video has sources
+                                    var videoElement = playerEl.querySelector('video');
+                                    if (videoElement) {
+                                        var sources = videoElement.querySelectorAll('source');
+                                        if (sources.length === 0) {
+                                            console.warn('Video element found but no sources available');
+                                        }
+                                    }
+                                if (splitSecondPlyr) {
+                                    try { splitSecondPlyr.destroy(); } catch (e) {
+                                        console.warn('Error destroying previous Plyr instance:', e);
+                                    }
+                                    splitSecondPlyr = null;
+                                }
+                                
+                                if (!slotPlayer || !placeholder) {
+                                    throw new Error('Required DOM elements not found');
+                                }
+                                
+                                slotPlayer.innerHTML = playerEl.outerHTML;
+                                placeholder.classList.add('hidden');
+                                slotPlayer.classList.add('has-player');
+                                
+                                var videoEl = slotPlayer.querySelector('.video-player');
+                                if (videoEl && typeof Plyr !== 'undefined') {
+                                    try {
+                                        splitSecondPlyr = new Plyr(videoEl, {
+                                            controls: ['play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+                                            ratio: '16:9'
+                                        });
+                                    } catch (plyrError) {
+                                        console.error('Error initializing Plyr:', plyrError);
+                                        // Continue without Plyr - video will use native controls
+                                    }
+                                }
+                                if (secondContent && mainContent) {
+                                    var primaryEl = mainContent.querySelector('.primary');
+                                    if (primaryEl) {
+                                        var videoContent = primaryEl.querySelector('.primary__video-content');
+                                        var commentBlock = primaryEl.querySelector('.primary__comment.d-none.d-xl-block');
+                                        var commentList = primaryEl.querySelector('.primary__comment-list.d-none.d-xl-block');
+                                        var videoPlayer = primaryEl.querySelector('.primary__videoPlayer');
+                                        var videoId = videoPlayer ? videoPlayer.getAttribute('data-video-id') : null;
+                                        if (!videoId && url) {
+                                            var urlMatch = url.match(/\/play\/(\d+)\//);
+                                            if (urlMatch) videoId = urlMatch[1];
+                                        }
+                                        
+                                        console.log('🔍 Extracting content for right slot. Video ID:', videoId);
+                                        console.log('📦 Found commentBlock:', !!commentBlock, 'commentList:', !!commentList);
+                                        
+                                        secondContent.innerHTML = '';
+                                        
+                                        if (videoContent) {
+                                            secondContent.innerHTML += videoContent.outerHTML;
+                                        }
+                                        
+                                        if (commentBlock) {
+                                            var commentBlockClone = commentBlock.cloneNode(true);
+                                            
+                                            var nestedCommentList = commentBlockClone.querySelector('.primary__comment-list');
+                                            if (nestedCommentList) {
+                                                console.log('⚠️ Found nested .primary__comment-list in commentBlock, removing');
+                                                nestedCommentList.remove();
+                                            }
+                                            
+                                            var allNestedComments = commentBlockClone.querySelectorAll('.primary__comment');
+                                            allNestedComments.forEach(function(nested) {
+                                                if (nested !== commentBlockClone) {
+                                                    console.log('⚠️ Found nested .primary__comment in commentBlock, removing');
+                                                    nested.remove();
+                                                }
+                                            });
+                                            
+                                            if (videoId) {
+                                                commentBlockClone.setAttribute('data-video-id', videoId);
+                                                var form = commentBlockClone.querySelector('.comment-form');
+                                                if (form) {
+                                                    form.setAttribute('data-video-id', videoId);
+                                                    form.setAttribute('action', "{{ route('user.comment.submit', '') }}/" + videoId);
+                                                    form.setAttribute('method', 'post');
+                                                }
+                                            }
+                                            
+                                            console.log('✅ Adding commentBlock to right slot');
+                                            secondContent.innerHTML += commentBlockClone.outerHTML;
+                                        }
+                                        
+                                        if (commentList) {
+                                            var commentListClone = commentList.cloneNode(true);
+                                            
+                                            var nestedComment = commentListClone.querySelector('.primary__comment');
+                                            if (nestedComment) {
+                                                console.log('⚠️ Found nested .primary__comment in commentList, removing');
+                                                nestedComment.remove();
+                                            }
+                                            
+                                            if (videoId) {
+                                                commentListClone.setAttribute('data-video-id', videoId);
+                                                var commentBoxContent = commentListClone.classList.contains('comment-box__content') ? commentListClone : commentListClone.querySelector('.comment-box__content');
+                                                if (commentBoxContent) {
+                                                    commentBoxContent.setAttribute('data-video-id', videoId);
+                                                    commentBoxContent.setAttribute('data-current-page', '1');
+                                                    commentBoxContent.setAttribute('data-current-sort', 'newest');
+                                                    commentBoxContent.setAttribute('data-last-page', 'false');
+                                                    commentBoxContent.setAttribute('data-loading', 'false');
+                                                }
+                                            }
+                                            
+                                            console.log('✅ Adding commentList to right slot');
+                                            secondContent.innerHTML += commentListClone.outerHTML;
+                                        }
+                                        
+                                        var finalCommentBlocks = secondContent.querySelectorAll('.primary__comment');
+                                        var finalCommentLists = secondContent.querySelectorAll('.primary__comment-list');
+                                        console.log('📊 Final secondContent has', finalCommentBlocks.length, 'comment blocks and', finalCommentLists.length, 'comment lists');
+                                        
+                                        if (finalCommentBlocks.length > 1) {
+                                            console.error('❌ ERROR: Found', finalCommentBlocks.length, 'comment blocks! Removing duplicates...');
+                                            for (var i = 1; i < finalCommentBlocks.length; i++) {
+                                                finalCommentBlocks[i].remove();
+                                            }
+                                        }
+                                        
+                                        if (finalCommentLists.length > 1) {
+                                            console.error('❌ ERROR: Found', finalCommentLists.length, 'comment lists! Removing duplicates...');
+                                            for (var i = 1; i < finalCommentLists.length; i++) {
+                                                finalCommentLists[i].remove();
+                                            }
+                                        }
+                                        
+                                        console.log('✅ After cleanup:', secondContent.querySelectorAll('.primary__comment').length, 'comment blocks and', secondContent.querySelectorAll('.primary__comment-list').length, 'comment lists');
+                                    }
+                                }
+                                if (contentArea) {
+                                    try {
+                                        contentArea.classList.add('is-split');
+                                    } catch (e) {
+                                        console.warn('Error adding is-split class to contentArea:', e);
+                                    }
+                                }
+                                if (playVideoEl) {
+                                    try {
+                                        playVideoEl.classList.add('split-has-right-video');
+                                    } catch (e) {
+                                        console.warn('Error adding split-has-right-video class:', e);
+                                    }
+                                }
+                                
+                                setTimeout(function() {
+                                    if (secondContent) {
+                                        var rightCommentBox = secondContent.querySelector('.comment-box__content');
+                                        if (rightCommentBox && videoId) {
+                                            $(rightCommentBox).data('video-id', videoId);
+                                            $(rightCommentBox).data('current-page', 1);
+                                            $(rightCommentBox).data('current-sort', 'newest');
+                                            $(rightCommentBox).data('last-page', false);
+                                            $(rightCommentBox).data('loading', false);
+                                        }
+                                    }
+                                }, 100);
+                                } catch (error) {
+                                    console.error('Error processing video response:', error);
+                                    console.error('Error details:', {
+                                        message: error.message,
+                                        stack: error.stack,
+                                        url: url
+                                    });
+                                    
+                                    if (originalPlaceholderText) {
+                                        var errorMsg = '@lang("Error loading video")';
+                                        if (error.message.includes('not found')) {
+                                            errorMsg = '@lang("Video not found")';
+                                        } else if (error.message.includes('Access denied')) {
+                                            errorMsg = '@lang("Access denied")';
+                                        } else if (error.message.includes('Server error')) {
+                                            errorMsg = '@lang("Server error. Please try again later.")';
+                                        }
+                                        originalPlaceholderText.textContent = errorMsg;
+                                    }
+                                    
+                                    setTimeout(function() {
+                                        if (originalPlaceholderText) {
+                                            originalPlaceholderText.textContent = '@lang("Choose a video to play here")';
+                                        }
+                                    }, 4000);
+                                }
+                            })
+                            .catch(function(error) {
+                                console.error('Error loading video:', error);
+                                console.error('Error details:', {
+                                    message: error.message,
+                                    stack: error.stack,
+                                    url: url
+                                });
+                                
+                                if (originalPlaceholderText) {
+                                    var errorMsg = '@lang("Error loading video. Click to retry.")';
+                                    if (error.message.includes('not found') || error.message.includes('404')) {
+                                        errorMsg = '@lang("Video not found. Click to try again.")';
+                                    } else if (error.message.includes('Access denied') || error.message.includes('403')) {
+                                        errorMsg = '@lang("Access denied. This video may require purchase.")';
+                                    } else if (error.message.includes('Server error') || error.message.includes('500')) {
+                                        errorMsg = '@lang("Server error. Please try again later.")';
+                                    }
+                                    
+                                    originalPlaceholderText.textContent = errorMsg;
+                                    placeholder.style.cursor = 'pointer';
+                                    var retryHandler = function() {
+                                        placeholder.style.cursor = '';
+                                        placeholder.removeEventListener('click', retryHandler);
+                                        loadVideoInSecondSlot(url);
+                                    };
+                                    placeholder.addEventListener('click', retryHandler);
+                                    
+                                    setTimeout(function() {
+                                        if (originalPlaceholderText) {
+                                            originalPlaceholderText.textContent = '@lang("Choose a video to play here")';
+                                        }
+                                        placeholder.style.cursor = '';
+                                        placeholder.removeEventListener('click', retryHandler);
+                                    }, 6000);
+                                } else {
+                                    // Fallback: redirect to video page only if it's not a server error
+                                    if (!error.message.includes('Server error') && !error.message.includes('500')) {
+                                        console.warn('Redirecting to video page due to error:', error.message);
+                                        window.location.href = url;
+                                    }
+                                }
+                            });
+                    }
+
+                    btnSplit.addEventListener('click', function() {
+                        playerArea.classList.add('is-split');
+                        if (contentArea) contentArea.classList.add('is-split');
+                    });
+
+                    btnBack.addEventListener('click', function() {
+                        playerArea.classList.remove('is-split');
+                        if (contentArea) {
+                            contentArea.classList.remove('is-split');
+                            setTimeout(function() {
+                                if (!contentArea.classList.contains('is-split')) {
+                                    var mainComment = contentArea.querySelector('.primary__slot-content--main .primary__comment');
+                                    var mainCommentList = contentArea.querySelector('.primary__slot-content--main .primary__comment-list');
+                                    if (mainComment) mainComment.style.display = '';
+                                    if (mainCommentList) mainCommentList.style.display = '';
+                                }
+                            }, 100);
+                        }
+                        if (playVideoEl) playVideoEl.classList.remove('split-has-right-video');
+                        if (splitSecondPlyr) {
+                            try { splitSecondPlyr.destroy(); } catch (e) {}
+                            splitSecondPlyr = null;
+                        }
+                        slotPlayer.innerHTML = '';
+                        slotPlayer.classList.remove('has-player');
+                        placeholder.classList.remove('hidden');
+                        if (secondContent) secondContent.innerHTML = '';
+                    });
+
+                    document.addEventListener('click', function(e) {
+                        if (!playerArea.classList.contains('is-split')) return;
+                        var a = e.target.closest('a');
+                        if (!a || !a.href) return;
+                        if (a.target === '_blank' || a.getAttribute('data-no-ajax')) return;
+                        try {
+                            var url = new URL(a.href);
+                            if (url.origin !== window.location.origin) return;
+                        } catch (err) { return; }
+                        var href = a.href;
+                        if (!href || (href.indexOf('/play/') === -1 && href.indexOf('/watch/') === -1)) return;
+                        if (!a.closest('.secondary') && !a.closest('.secondary__playlist') && !a.closest('.split-search-results')) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        loadVideoInSecondSlot(href);
+                    }, true);
+
+                    // Search functionality for split view
+                    var searchInput = document.getElementById('split-search-input');
+                    var searchBtn = document.getElementById('split-search-btn');
+                    var searchResults = document.getElementById('split-search-results');
+                    var searchTimeout = null;
+
+                    function performSearch(query) {
+                        if (!query || query.trim().length < 2) {
+                            searchResults.classList.remove('show');
+                            return;
+                        }
+
+                        searchResults.classList.add('show');
+                        searchResults.innerHTML = '<div class="split-search-results__loading">@lang("Searching...")</div>';
+
+                        var apiUrl = '{{ url("/api/videos/search") }}';
+                        fetch(apiUrl + '?search=' + encodeURIComponent(query.trim()) + '&per_page=10', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                throw new Error('HTTP error! status: ' + response.status);
+                            }
+                            return response.json();
+                        })
+                        .then(function(data) {
+                            if (!data || data.status !== 'success') {
+                                throw new Error('Invalid API response');
+                            }
+                            if (data.status === 'success' && data.data && data.data.videos && data.data.videos.length > 0) {
+                                var html = '';
+                                data.data.videos.forEach(function(video) {
+                                    var thumbUrl = video.thumbnail || '/assets/images/default-video.jpg';
+                                    var slug = video.slug || '';
+                                    var videoUrl = '/play/' + video.id + (slug ? '/' + slug : '');
+                                    var channelName = (video.user && video.user.display_name) ? video.user.display_name : (video.user && video.user.username) ? video.user.username : '';
+                                    var viewsText = video.views ? video.views + ' views' : '';
+                                    html += '<div class="split-search-results__item" data-video-url="' + videoUrl + '">';
+                                    html += '<img src="' + thumbUrl + '" alt="" class="split-search-results__thumb" onerror="this.src=\'/assets/images/default-video.jpg\'">';
+                                    html += '<div class="split-search-results__info">';
+                                    html += '<div class="split-search-results__title">' + (video.title || 'Untitled') + '</div>';
+                                    html += '<div class="split-search-results__meta">';
+                                    if (channelName) {
+                                        html += channelName;
+                                    }
+                                    if (channelName && viewsText) {
+                                        html += ' • ';
+                                    }
+                                    if (viewsText) {
+                                        html += viewsText;
+                                    }
+                                    html += '</div>';
+                                    html += '</div>';
+                                    html += '</div>';
+                                });
+                                searchResults.innerHTML = html;
+
+                                // Add click handlers to search results
+                                searchResults.querySelectorAll('.split-search-results__item').forEach(function(item) {
+                                    item.addEventListener('click', function() {
+                                        var videoUrl = item.getAttribute('data-video-url');
+                                        if (videoUrl) {
+                                            searchResults.classList.remove('show');
+                                            searchInput.value = '';
+                                            loadVideoInSecondSlot(videoUrl);
+                                        }
+                                    });
+                                });
+                            } else {
+                                searchResults.innerHTML = '<div class="split-search-results__empty">@lang("No videos found")</div>';
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error('Search error:', error);
+                            searchResults.innerHTML = '<div class="split-search-results__empty">@lang("Error searching videos. Please try again.")</div>';
+                            setTimeout(function() {
+                                if (searchResults.classList.contains('show')) {
+                                    searchResults.classList.remove('show');
+                                }
+                            }, 3000);
+                        });
+                    }
+
+                    if (searchInput && searchBtn && searchResults) {
+                        searchBtn.addEventListener('click', function() {
+                            performSearch(searchInput.value);
+                        });
+
+                        searchInput.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                performSearch(searchInput.value);
+                            }
+                        });
+
+                        searchInput.addEventListener('input', function() {
+                            clearTimeout(searchTimeout);
+                            var query = searchInput.value.trim();
+                            if (query.length >= 2) {
+                                searchTimeout = setTimeout(function() {
+                                    performSearch(query);
+                                }, 500);
+                            } else {
+                                searchResults.classList.remove('show');
+                            }
+                        });
+
+                        // Close search results when clicking outside
+                        document.addEventListener('click', function(e) {
+                            if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchBtn && !searchBtn.contains(e.target)) {
+                                searchResults.classList.remove('show');
+                            }
+                        });
+                    }
                 })();
 
                 const loader = document.getElementById('loader');
@@ -1997,29 +2943,44 @@
             // end share
 
 
-            // for comment
+            // for comment - initialize each comment box with its own state
+            $(document).ready(function() {
+                $('.comment-box__content').each(function() {
+                    const box = $(this);
+                    if (!box.data('current-page')) box.data('current-page', 1);
+                    if (!box.data('current-sort')) box.data('current-sort', 'newest');
+                    if (!box.data('last-page')) box.data('last-page', false);
+                    if (!box.data('loading')) box.data('loading', false);
+                });
+            });
+            
+            // Legacy global variables for backward compatibility (will be replaced by per-box data)
             let currentPage = 1;
-
             let lastPage = false;
-
             let currentSort = 'newest';
-
             let isLoading = false;
 
-            $('.dropdown-menu .sort-comments').on('click', function() {
+            $(document).on('click', '.dropdown-menu .sort-comments', function() {
                 const sortBy = $(this).data('sort');
-                currentSort = sortBy;
-                currentPage = 1;
-                lastPage = false;
-                isLoading = false;
-
-                $('.sort-comments').removeClass('active');
-                $(this).addClass('active');
-
-                $('.comment-box__content').empty();
-                $('#loading-spinner').removeClass('d-none');
-
-                loadMoreComments();
+                const dropdown = $(this).closest('.dropdown');
+                const commentSection = dropdown.closest('.primary__comment, .primary__slot-content--main, .primary__slot-content--second');
+                const commentBox = commentSection.find('.comment-box__content').first();
+                
+                if (commentBox.length) {
+                    commentSection.find('.sort-comments').removeClass('active');
+                    $(this).addClass('active');
+                    
+                    commentBox.data('current-sort', sortBy);
+                    commentBox.data('current-page', 1);
+                    commentBox.data('last-page', false);
+                    commentBox.data('loading', false);
+                    commentBox.empty();
+                    
+                    const spinner = commentSection.find('#loading-spinner').first();
+                    if (spinner.length) spinner.removeClass('d-none');
+                    else $('#loading-spinner').removeClass('d-none');
+                    loadMoreComments(commentBox);
+                }
 
             });
 
@@ -2086,7 +3047,7 @@
                 fileInput.val('');
             });
 
-            $('.comment-form').on('submit', function(e) {
+            $(document).on('submit', '.comment-form', function(e) {
                 e.preventDefault();
 
                 if (!auth) {
@@ -2097,6 +3058,10 @@
                 const form = $(this);
                 const formData = new FormData();
                 const fileInput = form.find('.comment-media-input')[0]; // Get native DOM element
+                
+                // Get video ID from form data attribute or use default
+                const videoId = form.data('video-id') || form.closest('[data-video-id]').data('video-id') || {{ $video->id }};
+                const commentUrl = videoId ? "{{ route('user.comment.submit', '') }}/" + videoId : "{{ route('user.comment.submit', $video->id) }}";
                 
                 // Add form fields
                 const commentText = form.find('textarea[name="comment"]').val();
@@ -2126,11 +3091,11 @@
                         console.log('⚠️ No file selected for upload');
                     }
 
-                console.log('🚀 Sending comment request to:', "{{ route('user.comment.submit', $video->id) }}");
+                console.log('🚀 Sending comment request to:', commentUrl);
                 
                 $.ajax({
                     type: "post",
-                    url: "{{ route('user.comment.submit', $video->id) }}",
+                    url: commentUrl,
                     data: formData,
                     processData: false,
                     contentType: false,
@@ -2175,12 +3140,76 @@
                                 }
                             }
                             
-                            $('.commentBox').css('height', '');
-                            $('.comment-box__content').prepend(response.data.comment);
+                            form.find('.commentBox').val('').css('height', '');
+                            const formVideoId = form.data('video-id') || form.closest('[data-video-id]').data('video-id');
+                            
+                            const formCommentSection = form.closest('.primary__comment');
+                            const slotContent = formCommentSection.closest('.primary__slot-content--main, .primary__slot-content--second');
+                            
+                            let commentContainer = null;
+                            let commentCountEl = null;
+                            
+                            if (slotContent.length) {
+                                const slotType = slotContent.hasClass('primary__slot-content--main') ? 'main' : 'second';
+                                
+                                const commentListEl = slotContent.find('.primary__comment-list').first();
+                                if (commentListEl.length) {
+                                    if (commentListEl.hasClass('comment-box__content')) {
+                                        commentContainer = commentListEl;
+                                    } else {
+                                        commentContainer = commentListEl.find('.comment-box__content').first();
+                                    }
+                                }
+                                
+                                if (!commentContainer || !commentContainer.length) {
+                                    if (formVideoId) {
+                                        commentContainer = slotContent.find('.comment-box__content[data-video-id="' + formVideoId + '"]').first();
+                                    }
+                                    if (!commentContainer || !commentContainer.length) {
+                                        commentContainer = slotContent.find('.comment-box__content').first();
+                                    }
+                                }
+                                
+                                commentCountEl = slotContent.find('.commentCount').first();
+                                
+                                if (commentContainer && commentContainer.length) {
+                                    if (formVideoId) {
+                                        commentContainer.attr('data-video-id', formVideoId);
+                                        commentContainer.data('video-id', formVideoId);
+                                    }
+                                    const commentWrapper = commentContainer.find('.comment-bow-wrapper').first();
+                                    if (commentWrapper.length) {
+                                        commentWrapper.prepend(response.data.comment);
+                                    } else {
+                                        commentContainer.prepend(response.data.comment);
+                                    }
+                                    if (commentCountEl && commentCountEl.length) {
+                                        const currentCount = parseInt(commentCountEl.text()) || 0;
+                                        commentCountEl.text(currentCount + 1);
+                                    }
+                                    console.log('✅ Comment added to', slotType, 'slot. Video ID:', formVideoId, 'Container:', commentContainer.length);
+                                } else {
+                                    console.warn('❌ Comment container not found in', slotType, 'slot. Form video ID:', formVideoId, 'Comment list:', commentListEl.length);
+                                }
+                            } else {
+                                commentContainer = formCommentSection.siblings('.primary__comment-list').find('.comment-box__content').first();
+                                commentCountEl = formCommentSection.find('.commentCount').first();
+                                if (commentContainer && commentContainer.length) {
+                                    if (formVideoId) {
+                                        commentContainer.attr('data-video-id', formVideoId);
+                                        commentContainer.data('video-id', formVideoId);
+                                    }
+                                    commentContainer.prepend(response.data.comment);
+                                    if (commentCountEl && commentCountEl.length) {
+                                        const currentCount = parseInt(commentCountEl.text()) || 0;
+                                        commentCountEl.text(currentCount + 1);
+                                    }
+                                }
+                            }
                             
                             // After prepending, check if media is visible
                             setTimeout(function() {
-                                const insertedMedia = $('.comment-box__content .comment-media').first();
+                                const insertedMedia = commentContainer && commentContainer.length ? commentContainer.find('.comment-media').first() : null;
                                 if (insertedMedia.length > 0) {
                                     const mediaUrl = insertedMedia.data('media-url');
                                     console.log('✅ Media element inserted:', {
@@ -2246,42 +3275,61 @@
                 });
             });
 
-            $('.comment-box__content').on('scroll', function() {
-                if (isLoading) return;
+            $(document).on('scroll', '.comment-box__content', function() {
                 let commentBox = $(this);
                 let scrollTop = commentBox.scrollTop();
                 let boxHeight = commentBox.outerHeight();
                 let contentHeight = commentBox[0].scrollHeight;
-                if (scrollTop + boxHeight >= contentHeight - 2 && !lastPage) {
-                    currentPage++;
-                    loadMoreComments();
+                const boxLastPage = commentBox.data('last-page') || false;
+                if (scrollTop + boxHeight >= contentHeight - 2 && !boxLastPage) {
+                    const boxPage = parseInt(commentBox.data('current-page')) || 1;
+                    commentBox.data('current-page', boxPage + 1);
+                    loadMoreComments(commentBox);
                 }
             });
 
-            function loadMoreComments() {
-
-                if (isLoading) return;
-                isLoading = true;
-
-                const commentsRoute = "{{ route('user.comment.get', $video->id) }}";
-                $('#loading-spinner').removeClass('d-none');
+            function loadMoreComments(commentBoxEl) {
+                const commentBox = commentBoxEl || $('.comment-box__content').first();
+                if (!commentBox.length) return;
+                
+                const boxId = commentBox.attr('id') || 'comment-box-' + Math.random().toString(36).substr(2, 9);
+                if (!commentBox.attr('id')) commentBox.attr('id', boxId);
+                
+                const boxLoading = commentBox.data('loading') || false;
+                if (boxLoading) return;
+                
+                const boxPage = parseInt(commentBox.data('current-page')) || 1;
+                const boxLastPage = commentBox.data('last-page') || false;
+                const boxSort = commentBox.data('current-sort') || 'newest';
+                
+                if (boxLastPage) return;
+                
+                commentBox.data('loading', true);
+                const videoId = commentBox.closest('[data-video-id]').data('video-id') || commentBox.data('video-id') || {{ $video->id }};
+                const commentsRoute = videoId ? "{{ route('user.comment.get', '') }}/" + videoId : "{{ route('user.comment.get', $video->id) }}";
+                const spinner = commentBox.closest('.primary__comment, .primary__slot-content--main, .primary__slot-content--second').find('#loading-spinner').first();
+                if (spinner.length) spinner.removeClass('d-none');
+                else $('#loading-spinner').removeClass('d-none');
                 $.ajax({
-                    url: `${commentsRoute}?page=${currentPage}&sort_by=${currentSort}`,
+                    url: `${commentsRoute}?page=${boxPage}&sort_by=${boxSort}`,
                     type: 'GET',
                     success: function(response) {
-                        $('#loading-spinner').addClass('d-none');
+                        if (spinner.length) spinner.addClass('d-none');
+                        else $('#loading-spinner').addClass('d-none');
                         if (response.status == 'success') {
-                            $('.comment-box__content').append(response.data.commentHtml);
-                            $('.commentCount').text(response.data.comment_count);
-                            if (currentPage >= response.data.last_page) {
-                                lastPage = true;
+                            commentBox.append(response.data.commentHtml);
+                            const commentSection = commentBox.closest('.primary__comment, .primary__slot-content--main, .primary__slot-content--second');
+                            commentSection.find('.commentCount').text(response.data.comment_count);
+                            commentBox.data('current-page', boxPage + 1);
+                            if (boxPage >= response.data.last_page) {
+                                commentBox.data('last-page', true);
                             }
                         } else {
                             notify('error', response.message.error);
                         }
                     },
                     complete: function() {
-                        isLoading = false;
+                        commentBox.data('loading', false);
                     }
                 });
             }
