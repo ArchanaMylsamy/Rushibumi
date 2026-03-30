@@ -13,7 +13,8 @@ class ManageFeedAdController extends Controller
     public function index()
     {
         $pageTitle = "Manage Feed Ads";
-        $feedAds = FeedAd::orderBy('priority', 'desc')
+        $feedAds = FeedAd::where('position', 1)
+            ->orderBy('priority', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(getPaginate());
         
@@ -33,7 +34,6 @@ class ManageFeedAdController extends Controller
             'image' => ['required', new FileTypeValidate(['jpg', 'jpeg', 'png', 'gif'])],
             'url' => 'nullable|url',
             'ad_type' => 'required|in:1,2', // Only image (1) and GIF (2), no video (3)
-            'position' => 'required|in:1,2',
             'status' => 'required|in:0,1',
             'priority' => 'nullable|integer|min:0|max:100',
         ], [
@@ -46,7 +46,7 @@ class ManageFeedAdController extends Controller
         $feedAd->title = $request->title;
         $feedAd->url = $request->url;
         $feedAd->ad_type = $request->ad_type;
-        $feedAd->position = $request->position;
+        $feedAd->position = 1; // Feed only
         $feedAd->status = $request->status;
         $feedAd->priority = $request->priority ?? 0;
 
@@ -81,10 +81,8 @@ class ManageFeedAdController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'image' => ['nullable', new FileTypeValidate(['jpg', 'jpeg', 'png', 'gif'])],
-            'video' => ['nullable', new FileTypeValidate(['mp4', 'mov', 'wmv', 'flv', 'avi', 'mkv', 'webm'])],
             'url' => 'nullable|url',
-            'ad_type' => 'required|in:1,2,3',
-            'position' => 'required|in:1,2',
+            'ad_type' => 'required|in:1,2',
             'status' => 'required|in:0,1',
             'priority' => 'nullable|integer|min:0|max:100',
         ], [
@@ -96,7 +94,7 @@ class ManageFeedAdController extends Controller
         $feedAd->title = $request->title;
         $feedAd->url = $request->url;
         $feedAd->ad_type = $request->ad_type;
-        $feedAd->position = $request->position;
+        $feedAd->position = 1; // Feed only
         $feedAd->status = $request->status;
         $feedAd->priority = $request->priority ?? 0;
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Lib\Intended;
+use App\Models\User;
 use App\Models\UserLogin;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
@@ -14,6 +15,12 @@ class LoginController extends Controller
 {
 
     use AuthenticatesUsers;
+
+    /**
+     * Lock account login attempts for 15 minutes after 3 failures.
+     */
+    protected int $maxAttempts = 3;
+    protected int $decayMinutes = 15;
 
 
     protected $username;
@@ -81,16 +88,27 @@ class LoginController extends Controller
 
     protected function validateLogin($request)
     {
-
         $validator = Validator::make($request->all(), [
-            $this->username() => 'required|string',
+            'username' => 'required|string|max:191',
             'password' => 'required|string',
+            'remember' => 'nullable|boolean',
+        ], [
+            'username.required' => 'The username or email field is required.',
+            'password.required' => 'The password field is required.',
         ]);
+
+        // If login input appears to be an email, enforce strict email syntax.
+        $validator->after(function ($validator) use ($request) {
+            $login = trim((string) $request->input('username', ''));
+            if ($login !== '' && str_contains($login, '@') && !filter_var($login, FILTER_VALIDATE_EMAIL)) {
+                $validator->errors()->add('username', 'Please enter a valid email address.');
+            }
+        });
+
         if ($validator->fails()) {
             Intended::reAssignSession();
             $validator->validate();
         }
-
     }
 
     public function logout()
@@ -100,6 +118,25 @@ class LoginController extends Controller
 
         $notify[] = ['success', 'You have been logged out.'];
         return to_route('home')->withNotify($notify);
+    }
+
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        $login = trim((string) $request->input('username', ''));
+        $fieldType = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $userExists = false;
+        if ($login !== '') {
+            $userExists = User::where($fieldType, $login)->exists();
+        }
+
+        $message = $userExists
+            ? 'Invalid password.'
+            : ($fieldType === 'email' ? 'Email address not found.' : 'Username not found.');
+
+        return back()
+            ->withErrors([$this->username() => $message])
+            ->withInput($request->only('username', 'remember'));
     }
 
 

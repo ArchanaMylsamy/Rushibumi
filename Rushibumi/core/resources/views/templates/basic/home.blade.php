@@ -1,33 +1,7 @@
 @extends($activeTemplate . 'layouts.frontend')
 @section('content')
     <div class="home-body">
-        {{-- Top Banner: Show Feed Ad (Top Position) if available, otherwise show Google AdSense --}}
-        @php
-            $hasTopAds = isset($topAds) && $topAds->count() > 0;
-            // Randomly select one top ad from all available top ads
-            $selectedTopAd = $hasTopAds ? $topAds->random() : null;
-        @endphp
-
-        @if($hasTopAds && $selectedTopAd)
-            {{-- Show Feed Ad as Top Banner (randomly selected) --}}
-            @include($activeTemplate . 'partials.video.top_ad_banner', ['topAd' => $selectedTopAd])
-        @else
-            {{-- Show Google AdSense Banner --}}
-            <div class="adsense-top-banner">
-                <div class="ad-shimmer"></div>
-                <div class="ad-content">
-                    <span class="ad-badge">Advertisement</span>
-                    <ins class="adsbygoogle"
-                         style="display:block"
-                         data-ad-client="ca-pub-3940256099942544"
-                         data-ad-slot="6300978111"
-                         data-ad-format="auto"
-                         data-full-width-responsive="true"></ins>
-                </div>
-            </div>
-        @endif
-
-        {{-- Top Ad from Feed Ads - will be shown at the beginning of videos grid --}}
+        {{-- Top/banner ad removed from home page --}}
  
         @php
             // Create varied pattern: multiple rows, then shorts, then one row, then shorts, etc.
@@ -75,63 +49,47 @@
                 $totalVideos = $allVideos->count();
                 $totalAds = $availableFeedAds->count();
                 
-                // Create random ad positions - distribute ads randomly throughout all videos
-                // First ad will be shown at the top (position 1), rest distributed randomly
+                // Create random ad positions distributed through the feed (not pinned at top)
                 $adPositions = [];
                 if ($totalAds > 0 && $totalVideos > 0) {
                     // Create shuffled list of ads for random distribution
                     $shuffledAds = $availableFeedAds->shuffle()->values();
-                    
-                    // First ad goes at position 1 (top of the grid)
-                    if ($totalAds > 0) {
-                        $adPositions[1] = $shuffledAds[0];
-                        $usedPositions = [1];
-                        
-                        // Distribute remaining ads randomly throughout videos
-                        if ($totalAds > 1) {
-                            // Calculate spacing for remaining ads
-                            $remainingAds = $totalAds - 1;
-                            $remainingVideos = max(1, $totalVideos - 1); // Exclude position 1
-                            $baseSpacing = floor($remainingVideos / ($remainingAds + 1));
-                            $minGap = max(2, $baseSpacing); // Minimum gap between ads
-                            
-                            for ($i = 1; $i < $totalAds; $i++) {
-                                // Calculate base position (evenly distributed, starting from position 2)
-                                $basePosition = 2 + ($i - 1) * $baseSpacing;
-                                
-                                // Add randomness: vary position by up to ±30% of spacing
-                                $variance = floor($baseSpacing * 0.3);
-                                $randomOffset = $variance > 0 ? rand(-$variance, $variance) : 0;
-                                $position = max(2, min($totalVideos, $basePosition + $randomOffset));
-                                
-                                // Ensure minimum gap from other ads
-                                $attempts = 0;
-                                while ($attempts < 20) {
-                                    $valid = true;
-                                    foreach ($usedPositions as $usedPos) {
-                                        if (abs($position - $usedPos) < $minGap) {
-                                            $valid = false;
-                                            // Try a different position
-                                            $position = max(2, min($totalVideos, $position + ($position < $usedPos ? -1 : 1) * $minGap));
-                                            break;
-                                        }
-                                    }
-                                    
-                                    if ($valid) {
-                                        break;
-                                    }
-                                    $attempts++;
+                    $usedPositions = [];
+                    // Keep ads away from the first card when possible.
+                    $minInsertPosition = $totalVideos >= 3 ? 3 : ($totalVideos >= 2 ? 2 : 1);
+                    $baseSpacing = floor($totalVideos / ($totalAds + 1));
+                    $minGap = max(2, $baseSpacing);
+
+                    for ($i = 0; $i < $totalAds; $i++) {
+                        $basePosition = ($i + 1) * max(1, $baseSpacing);
+                        $basePosition = max($minInsertPosition, $basePosition);
+
+                        $variance = floor(max(1, $baseSpacing) * 0.3);
+                        $randomOffset = $variance > 0 ? rand(-$variance, $variance) : 0;
+                        $position = max($minInsertPosition, min($totalVideos, $basePosition + $randomOffset));
+
+                        $attempts = 0;
+                        while ($attempts < 20) {
+                            $valid = true;
+                            foreach ($usedPositions as $usedPos) {
+                                if (abs($position - $usedPos) < $minGap) {
+                                    $valid = false;
+                                    $position = max($minInsertPosition, min($totalVideos, $position + ($position < $usedPos ? -1 : 1) * $minGap));
+                                    break;
                                 }
-                                
-                                // If still not valid, use base position
-                                if (!$valid) {
-                                    $position = $basePosition;
-                                }
-                                
-                                $usedPositions[] = $position;
-                                $adPositions[$position] = $shuffledAds[$i];
                             }
+                            if ($valid) {
+                                break;
+                            }
+                            $attempts++;
                         }
+
+                        if (!$valid) {
+                            $position = max($minInsertPosition, min($totalVideos, $basePosition));
+                        }
+
+                        $usedPositions[] = $position;
+                        $adPositions[$position] = $shuffledAds[$i];
                     }
                     
                     // Sort positions to ensure ads are inserted in order
@@ -267,139 +225,6 @@
             }
         }
  
-        /* Google AdSense - Top Banner Only */
-        .adsense-top-banner {
-            width: 100%;
-            background: rgba(var(--base-rgb), 0.03);
-            border: 1px solid rgba(var(--base-rgb), 0.1);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 25px;
-            min-height: 100px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
- 
-        .adsense-top-banner:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
-        }
- 
-        .ad-shimmer {
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                transparent 0%,
-                rgba(255, 255, 255, 0.1) 50%,
-                transparent 100%
-            );
-            animation: shimmerMove 4s infinite;
-        }
- 
-        @keyframes shimmerMove {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
- 
-        .ad-content {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
- 
-        .ad-badge {
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            background: hsl(var(--base));
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            z-index: 3;
-        }
- 
-        /* Light Theme */
-        [data-theme="light"] .adsense-top-banner {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.08);
-        }
- 
-        [data-theme="light"] .ad-shimmer {
-            background: linear-gradient(90deg,
-                transparent 0%,
-                rgba(0, 0, 0, 0.05) 50%,
-                transparent 100%
-            );
-        }
- 
-        /* Dark Theme */
-        [data-theme="dark"] .adsense-top-banner {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
- 
-        [data-theme="dark"] .ad-shimmer {
-            background: linear-gradient(90deg,
-                transparent 0%,
-                rgba(255, 255, 255, 0.08) 50%,
-                transparent 100%
-            );
-        }
- 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .adsense-top-banner {
-                min-height: 80px;
-                padding: 15px;
-                margin-bottom: 20px;
-                border-radius: 10px;
-            }
- 
-            .ad-content {
-                min-height: 50px;
-            }
- 
-            .ad-badge {
-                font-size: 9px;
-                padding: 5px 12px;
-                letter-spacing: 1.2px;
-            }
-        }
- 
-        @media (max-width: 480px) {
-            .adsense-top-banner {
-                min-height: 60px;
-                padding: 12px;
-                border-radius: 8px;
-            }
- 
-            .ad-badge {
-                font-size: 8px;
-                padding: 4px 10px;
-                letter-spacing: 1px;
-                left: 15px;
-            }
-        }
- 
-        /* AdSense Container */
-        .adsbygoogle {
-            width: 100%;
-            display: block !important;
-        }
     </style>
 @endpush
  
@@ -419,17 +244,6 @@
  
         $(document).ready(function() {
             playersInitiate();
-           
-            // Initialize Google AdSense Ad
-            setTimeout(function() {
-                try {
-                    if (typeof window.adsbygoogle !== 'undefined') {
-                        (window.adsbygoogle = window.adsbygoogle || []).push({});
-                    }
-                } catch (e) {
-                    // Silently handle AdSense errors - script may not be loaded
-                }
-            }, 500);
         });
  
         function playersInitiate() {

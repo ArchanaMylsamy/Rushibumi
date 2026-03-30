@@ -97,6 +97,15 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M10 2v20M2 10h20"/></svg>
                         <span>@lang('Split view')</span>
                     </button>
+                    <button type="button" class="btn btn--sm btn-outline--base split-swap-btn d-none" id="split-swap-btn" title="@lang('Swap sides')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 8h12"></path>
+                            <path d="m12 4 4 4-4 4"></path>
+                            <path d="M20 16H8"></path>
+                            <path d="m12 12-4 4 4 4"></path>
+                        </svg>
+                        <span>@lang('Swap sides')</span>
+                    </button>
                     <button type="button" class="btn btn--sm btn-outline--base split-view-back d-none" id="split-view-back" title="@lang('Back to normal')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 12l6-6m-6 6l6 6"/></svg>
                         <span>@lang('Back to normal')</span>
@@ -315,14 +324,16 @@
                                             </svg>
                                         </button>
 
-                                        <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-                                                <circle cx="12" cy="13" r="3"></circle>
-                                            </svg>
-                                        </button>
+                                        @if ($canUploadCommentMedia)
+                                            <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                                    <circle cx="12" cy="13" r="3"></circle>
+                                                </svg>
+                                            </button>
 
-                                        <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                            <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                        @endif
                                         <div class="comment-media-preview d-none"></div>
 
                                         <div class="emoji-picker-container" style="display: none;">
@@ -508,14 +519,16 @@
                                         </svg>
                                     </button>
 
-                                    <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-                                            <circle cx="12" cy="13" r="3"></circle>
-                                        </svg>
-                                    </button>
+                                    @if ($canUploadCommentMedia)
+                                        <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                                <circle cx="12" cy="13" r="3"></circle>
+                                            </svg>
+                                        </button>
 
-                                    <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                        <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                                    @endif
                                     <div class="comment-media-preview d-none"></div>
 
                                     <div class="emoji-picker-container" style="display: none;">
@@ -830,8 +843,23 @@
        .primary__player-area.is-split ~ .primary__player-actions .split-view-toggle {
            display: none;
        }
+       .primary__player-actions .split-swap-btn.d-none {
+           display: none !important;
+       }
+       .primary__player-area.is-split ~ .primary__player-actions .split-swap-btn {
+           display: none;
+       }
+       .play-video.split-has-right-video .primary__player-area.is-split ~ .primary__player-actions .split-swap-btn {
+           display: inline-flex !important;
+       }
        .primary__player-area.is-split ~ .primary__player-actions .split-view-back {
            display: inline-flex !important;
+       }
+       .primary__player-area.is-split.is-swapped .primary__player-slot--main {
+           order: 2;
+       }
+       .primary__player-area.is-split.is-swapped .primary__player-slot--second {
+           order: 1;
        }
        /* Ensure video player containers don't overflow */
        .primary__player-area.is-split .primary__player-slot--main,
@@ -890,6 +918,12 @@
        .primary__content-area.is-split .primary__slot-content--second > * {
            max-width: 100%;
            box-sizing: border-box;
+       }
+       .primary__content-area.is-split.is-swapped .primary__slot-content--main {
+           order: 2;
+       }
+       .primary__content-area.is-split.is-swapped .primary__slot-content--second {
+           order: 1;
        }
        /* Ensure video content area doesn't overflow */
        .primary__player-area.is-split .primary__player-slot--main .primary__video-content,
@@ -1535,6 +1569,58 @@
            padding: 0 !important;
            transform: none !important;
        }
+
+       /* Keep related thumbnails consistently sized (16:9) */
+       .play-video .secondary__playlist .video-item__thumb {
+           width: 190px !important;
+           max-width: 190px !important;
+           aspect-ratio: 16 / 9 !important;
+           height: auto !important;
+           flex: 0 0 190px !important;
+       }
+
+       .play-video .secondary__playlist .video-item__thumb img,
+       .play-video .secondary__playlist .video-item__thumb video,
+       .play-video .secondary__playlist .video-item__thumb .related-video-player,
+       .play-video .secondary__playlist .video-item__thumb .video-player,
+       .play-video .secondary__playlist .video-item__thumb .plyr,
+       .play-video .secondary__playlist .video-item__thumb .plyr--video,
+       .play-video .secondary__playlist .video-item__thumb .plyr__video-wrapper,
+       .play-video .secondary__playlist .video-item__thumb .plyr__poster {
+           position: static !important;
+           width: 100% !important;
+           height: 100% !important;
+           min-width: 0 !important;
+           min-height: 0 !important;
+           max-width: none !important;
+           max-height: none !important;
+           display: block !important;
+           object-fit: cover !important;
+       }
+
+       @media screen and (max-width: 1499px) {
+           .play-video .secondary__playlist .video-item__thumb {
+               width: 175px !important;
+               max-width: 175px !important;
+               flex-basis: 175px !important;
+           }
+       }
+
+       @media screen and (max-width: 1399px) {
+           .play-video .secondary__playlist .video-item__thumb {
+               width: 155px !important;
+               max-width: 155px !important;
+               flex-basis: 155px !important;
+           }
+       }
+
+       @media screen and (max-width: 424px) {
+           .play-video .secondary__playlist .video-item__thumb {
+               width: 100% !important;
+               max-width: 100% !important;
+               flex-basis: 100% !important;
+           }
+       }
    </style>
 @endpush
 
@@ -1732,11 +1818,12 @@
                     var placeholder = document.getElementById('split-placeholder');
                     var slotPlayer = document.getElementById('split-slot-player');
                     var btnSplit = document.getElementById('split-view-toggle');
+                    var btnSwap = document.getElementById('split-swap-btn');
                     var btnBack = document.getElementById('split-view-back');
                     var playVideoEl = document.querySelector('.play-video');
                     var splitSecondPlyr = null;
 
-                    if (!playerArea || !secondSlot || !slotPlayer || !btnSplit || !btnBack) return;
+                    if (!playerArea || !secondSlot || !slotPlayer || !btnSplit || !btnBack || !btnSwap) return;
 
                     function loadVideoInSecondSlot(url) {
                         if (!url || !slotPlayer || !placeholder) {
@@ -2144,10 +2231,18 @@
                         if (contentArea) contentArea.classList.add('is-split');
                     });
 
+                    btnSwap.addEventListener('click', function() {
+                        if (!playVideoEl || !playVideoEl.classList.contains('split-has-right-video')) return;
+                        playerArea.classList.toggle('is-swapped');
+                        if (contentArea) contentArea.classList.toggle('is-swapped');
+                    });
+
                     btnBack.addEventListener('click', function() {
                         playerArea.classList.remove('is-split');
+                        playerArea.classList.remove('is-swapped');
                         if (contentArea) {
                             contentArea.classList.remove('is-split');
+                            contentArea.classList.remove('is-swapped');
                             setTimeout(function() {
                                 if (!contentArea.classList.contains('is-split')) {
                                     var mainComment = contentArea.querySelector('.primary__slot-content--main .primary__comment');
@@ -3067,8 +3162,9 @@
                 const commentText = form.find('textarea[name="comment"]').val();
                 const csrfToken = form.find('input[name="_token"]').val();
                 
-                if (!commentText || commentText.trim() === '') {
-                    notify('error', 'Please enter a comment');
+                const hasMedia = fileInput && fileInput.files && fileInput.files.length > 0;
+                if ((!commentText || commentText.trim() === '') && !hasMedia) {
+                    notify('error', 'Please enter a comment or upload a GIF/video');
                     return;
                 }
                 
@@ -3357,8 +3453,9 @@
                 const replyTo = form.find('input[name="reply_to"]').val();
                 const csrfToken = $('meta[name="csrf-token"]').attr('content') || form.find('input[name="_token"]').val();
                 
-                if (!commentText || commentText.trim() === '') {
-                    notify('error', 'Please enter a comment');
+                const hasMedia = fileInput && fileInput.files && fileInput.files.length > 0;
+                if ((!commentText || commentText.trim() === '') && !hasMedia) {
+                    notify('error', 'Please enter a comment or upload a GIF/video');
                     return;
                 }
                 

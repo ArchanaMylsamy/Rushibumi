@@ -45,11 +45,10 @@ class SiteController extends Controller {
         // For pagination, we still need the paginated version for infinite scroll
         $videos = (clone $baseVideos)->where('is_shorts_video', Status::NO)->with('videoFiles')->paginate(getPaginate());
 
-        // Get active feed ads (images, GIFs, and videos)
+        // Feed ads only (top/banner ads removed from home page)
         $feedAds = FeedAd::active()->feed()->whereIn('ad_type', [1, 2, 3])->orderBy('priority', 'desc')->get();
-        $topAds = FeedAd::active()->top()->whereIn('ad_type', [1, 2, 3])->orderBy('priority', 'desc')->get();
 
-        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos', 'allVideos', 'feedAds', 'topAds'));
+        return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage', 'videos', 'shortVideos', 'allVideos', 'feedAds'));
     }
  
     public function search(Request $request) {
@@ -224,8 +223,12 @@ class SiteController extends Controller {
             $relatedPlaylistVideos = @$plan->videos()->get();
             $planPlaylists         = $plan->playlists()->with('videos')->get();
         }
- 
-        return view('Template::play_video', compact('pageTitle', 'seoContents', 'seoImage', 'plan', 'planPlaylists', 'isPurchased', 'playlists', 'video', 'gatewayCurrency', 'relatedVideos', 'categories', 'purchasedTrue', 'watchLater', 'comments', 'adsDurations', 'relatedPlaylistVideos', 'palyPlaylist'));
+        $canUploadCommentMedia = false;
+        if (auth()->check()) {
+            $canUploadCommentMedia = $video->user_id == auth()->id() || $video->user->subscribers()->where('following_id', auth()->id())->exists();
+        }
+
+        return view('Template::play_video', compact('pageTitle', 'seoContents', 'seoImage', 'plan', 'planPlaylists', 'isPurchased', 'playlists', 'video', 'gatewayCurrency', 'relatedVideos', 'categories', 'purchasedTrue', 'watchLater', 'comments', 'adsDurations', 'relatedPlaylistVideos', 'palyPlaylist', 'canUploadCommentMedia'));
     }
  
     public function shortPlayVideo($id = 0, $slug = null) {
@@ -248,7 +251,12 @@ class SiteController extends Controller {
  
         $relatedVideos = $relatedVideosQuery->paginate(getPaginate());
  
-        return view('Template::shorts_play', compact('pageTitle', 'short', 'relatedVideos'));
+        $canUploadCommentMedia = false;
+        if (auth()->check()) {
+            $canUploadCommentMedia = $short->user_id == auth()->id() || $short->user->subscribers()->where('following_id', auth()->id())->exists();
+        }
+
+        return view('Template::shorts_play', compact('pageTitle', 'short', 'relatedVideos', 'canUploadCommentMedia'));
     }
  
     private function viewsHistory($video) {

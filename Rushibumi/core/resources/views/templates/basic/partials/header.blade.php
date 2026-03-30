@@ -416,36 +416,81 @@
     <script>
         (function($) {
             $(document).ready(function() {
-                var recognition = new(window.SpeechRecognition || window.webkitSpeechRecognition)();
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
+                var SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+                var recognition = null;
+                var isListening = false;
+                var defaultVoiceTitle = '@lang('Search with your voice')';
 
+                function resetVoiceUi(title) {
+                    $('.popup-container__title').text(title || defaultVoiceTitle);
+                    $('.micActiveBtn').removeClass('active');
+                    $('.micBtn').removeClass('active');
+                    isListening = false;
+                }
 
-                $('.micActiveBtn').on('click', function() {
+                function ensureRecognition() {
+                    if (!SpeechRecognitionClass) {
+                        return false;
+                    }
+
+                    if (!recognition) {
+                        recognition = new SpeechRecognitionClass();
+                        recognition.lang = 'en-US';
+                        recognition.interimResults = false;
+                        recognition.maxAlternatives = 1;
+
+                        recognition.onresult = function(event) {
+                            var transcript = event.results?.[0]?.[0]?.transcript || '';
+                            if (transcript) {
+                                $('[name="search"]').val(transcript);
+                                $('.search-form').submit();
+                            } else {
+                                resetVoiceUi('Sorry, I didn\'t catch that.');
+                            }
+                        };
+
+                        recognition.onerror = function() {
+                            resetVoiceUi('Sorry, I didn\'t catch that.');
+                        };
+
+                        recognition.onend = function() {
+                            resetVoiceUi(defaultVoiceTitle);
+                        };
+                    }
+
+                    return true;
+                }
+
+                function startVoiceSearch() {
+                    if (!ensureRecognition()) {
+                        resetVoiceUi('Voice search is not supported in this browser.');
+                        return;
+                    }
+
+                    if (isListening) {
+                        return;
+                    }
+
+                    isListening = true;
                     $('.popup-container__title').text('Listening...');
-                    $(this).addClass('active');
-                    recognition.start();
+                    $('.micActiveBtn').addClass('active');
+                    $('.micBtn').addClass('active');
+
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        resetVoiceUi('Unable to start voice search.');
+                    }
+                }
+
+                $('.micActiveBtn').on('click', startVoiceSearch);
+                $('.micBtn').on('click', function() {
+                    setTimeout(startVoiceSearch, 200);
                 });
 
-
-                recognition.onresult = function(event) {
-                    var transcript = event.results[0][0].transcript;
-                    $('[name="search"]').val(transcript);
-                    $('.search-form').submit();
-                    $('.popup-container__title').text('@lang('Search with your voice')');
-                    $('.micActiveBtn').removeClass('active');
-                };
-
-                recognition.onerror = function(event) {
-                    $('.popup-container__title').text('Sorry, I didn\'t catch that.');
-                    $('.micActiveBtn').removeClass('active');
-                };
-
-                recognition.onend = function() {
-                    $('.popup-container__title').text('@lang('Search with your voice')');
-                    $('.micActiveBtn').removeClass('active');
-                };
+                if (!SpeechRecognitionClass) {
+                    $('.micBtn, .micActiveBtn').attr('title', 'Voice search not supported in this browser');
+                }
 
                 // Search clear button functionality
                 var searchInput = $('.search-input');

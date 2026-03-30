@@ -17,17 +17,17 @@
                     </div>
                     <div class="account-form__body">
                         @include($activeTemplate . 'partials.social_login')
-                        <form method="POST" action="{{ route('user.login') }}" class="verify-gcaptcha">
+                        <form method="POST" action="{{ route('user.login') }}" class="verify-gcaptcha" novalidate>
                             @csrf
                             <div class="form-group">
                                 <label class="form--label">@lang('Username or Email')</label>
                                 <input type="text" name="username" value="{{ old('username') }}"
-                                       class="form-control form--control" autocomplete="username" required>
+                                       class="form-control form--control" autocomplete="username">
                             </div>
 
                             <div class="form-group">
                                 <label class="form--label ">@lang('Password')</label>
-                                <input type="password" class="form-control form--control" name="password" autocomplete="current-password" required>
+                                <input type="password" class="form-control form--control" name="password" autocomplete="current-password">
                             </div>
 
                             @php
@@ -39,6 +39,7 @@
                             <div class="d-flex flex-wrap justify-content-between">
                                 <div class="form-group form--check">
                                     <input class="form-check-input" type="checkbox" name="remember" id="remember"
+                                           value="1"
                                            {{ old('remember') ? 'checked' : '' }}>
                                     <label class="form-check-label" for="remember">
                                         @lang('Remember Me')
@@ -655,6 +656,60 @@
     <script>
         (function() {
             'use strict';
+            
+            document.addEventListener('DOMContentLoaded', function () {
+                const loginForm = document.querySelector('form[action="{{ route('user.login') }}"]');
+                if (!loginForm) return;
+
+                const usernameInput = loginForm.querySelector('input[name="username"]');
+                const passwordInput = loginForm.querySelector('input[name="password"]');
+
+                function clearInlineError(input) {
+                    if (!input) return;
+                    input.classList.remove('is-invalid');
+                    const formGroup = input.closest('.form-group');
+                    if (!formGroup) return;
+                    const existing = formGroup.querySelector('.client-invalid-feedback');
+                    if (existing) existing.remove();
+                }
+
+                function showInlineError(input, message) {
+                    if (!input) return;
+                    clearInlineError(input);
+                    input.classList.add('is-invalid');
+                    const formGroup = input.closest('.form-group');
+                    if (!formGroup) return;
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback d-block client-invalid-feedback';
+                    feedback.textContent = message;
+                    formGroup.appendChild(feedback);
+                }
+
+                loginForm.addEventListener('submit', function (e) {
+                    let hasError = false;
+
+                    const username = (usernameInput?.value || '').trim();
+                    const password = (passwordInput?.value || '').trim();
+
+                    clearInlineError(usernameInput);
+                    clearInlineError(passwordInput);
+
+                    if (!username) {
+                        showInlineError(usernameInput, 'The username or email field is required.');
+                        hasError = true;
+                    }
+
+                    if (!password) {
+                        showInlineError(passwordInput, 'The password field is required.');
+                        hasError = true;
+                    }
+
+                    if (hasError) {
+                        e.preventDefault();
+                        (usernameInput && !username ? usernameInput : passwordInput)?.focus();
+                    }
+                });
+            });
             
             function forceDarkBackground(input) {
                 if (input) {

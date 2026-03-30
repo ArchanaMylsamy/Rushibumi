@@ -80,14 +80,12 @@
 <style>
     /* Top Ad Banner - Full Width Responsive Banner */
     .top-ad-banner {
-        width: calc(100% + 40px); /* Break out of home-body padding (20px on each side) */
-        margin-left: -20px; /* Offset home-body padding */
-        margin-right: -20px;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
         background: rgba(var(--base-rgb), 0.03);
         border: 1px solid rgba(var(--base-rgb), 0.1);
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
+        border-radius: 12px;
         padding: 0;
         margin-bottom: 25px;
         margin-top: 0;
@@ -101,22 +99,6 @@
         transition: all 0.3s ease;
     }
     
-    @media (max-width: 768px) {
-        .top-ad-banner {
-            width: calc(100% + 30px);
-            margin-left: -15px;
-            margin-right: -15px;
-        }
-    }
-    
-    @media (max-width: 480px) {
-        .top-ad-banner {
-            width: calc(100% + 24px);
-            margin-left: -12px;
-            margin-right: -12px;
-        }
-    }
-
     .top-ad-banner:hover {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         transform: translateY(-2px);
@@ -181,7 +163,7 @@
         height: 100%;
         object-fit: cover;
         object-position: center;
-        border-radius: 12px;
+        border-radius: inherit;
         display: block;
         /* Responsive: fills banner maintaining 728:90 aspect ratio */
     }

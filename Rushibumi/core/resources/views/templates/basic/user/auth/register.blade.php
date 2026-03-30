@@ -200,6 +200,12 @@
                                     <div class="form-group">
                                         <label class="form--label">@lang('Password') <span class="text-danger">*</span></label>
                                         <input class="form-control form--control @if (gs('secure_password')) secure-password @endif" name="password" type="password" required>
+                                        <div class="password-strength mt-2">
+                                            <div class="password-strength__bar">
+                                                <span class="password-strength__fill"></span>
+                                            </div>
+                                            <small class="password-strength__text">@lang('Strength'): @lang('Too weak')</small>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -912,6 +918,29 @@
             background-size: 16px;
             padding-right: 35px;
         }
+
+        .password-strength__bar {
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+        }
+
+        .password-strength__fill {
+            display: block;
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            transition: width .2s ease, background-color .2s ease;
+            background: #ef4444;
+        }
+
+        .password-strength__text {
+            display: inline-block;
+            margin-top: 6px;
+            color: rgba(255, 255, 255, 0.75);
+        }
     </style>
 @endpush
 
@@ -958,10 +987,10 @@ $(document).ready(function() {
                 });
             });
 
-            // Phone number validation
+            // Phone number validation (mirrors backend rule: /^\+?[1-9]\d{6,14}$/)
             $('input[name="phone_number"]').on('input', function() {
                 var phone = $(this).val();
-                var phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+                var phoneRegex = /^\+?[1-9]\d{6,14}$/;
                 
                 if (phone && !phoneRegex.test(phone)) {
                     $(this).addClass('is-invalid');
@@ -974,42 +1003,47 @@ $(document).ready(function() {
                 }
             });
 
-            // Government ID validation
-            $('input[name="government_id"]').on('input', function() {
-                var govId = $(this).val();
+            function getGovernmentIdPattern(govIdType) {
+                var patterns = {
+                    'Passport': /^[A-Z0-9]{6,20}$/i,
+                    'Driver License': /^[A-Z0-9-]{5,30}$/i,
+                    'National ID': /^[A-Z0-9-]{5,30}$/i,
+                    'Aadhar Card': /^\d{12}$/,
+                    'SSN': /^\d{3}-\d{2}-\d{4}$/,
+                    'Voter ID': /^[A-Z0-9-]{5,30}$/i,
+                    'PAN Card': /^[A-Z]{5}\d{4}[A-Z]$/,
+                    'Other': /^.{5,50}$/
+                };
+
+                return patterns[govIdType] || null;
+            }
+
+            function validateGovernmentIdField() {
+                var govInput = $('input[name="government_id"]');
+                var govId = govInput.val().trim();
                 var govIdType = $('select[name="government_id_type"]').val();
-                
-                if (govId && govIdType) {
-                    var isValid = false;
-                    
-                    switch(govIdType) {
-                        case 'Passport':
-                            isValid = /^[A-Z]{1}[0-9]{7}$/.test(govId);
-                            break;
-                        case 'Driver License':
-                            isValid = /^[A-Z]{1}[0-9]{8}$/.test(govId);
-                            break;
-                        case 'Aadhar Card':
-                            isValid = /^[0-9]{12}$/.test(govId);
-                            break;
-                        case 'SSN':
-                            isValid = /^[0-9]{3}-[0-9]{2}-[0-9]{4}$/.test(govId);
-                            break;
-                        default:
-                            isValid = govId.length >= 5;
-                    }
-                    
-                    if (!isValid) {
-                        $(this).addClass('is-invalid');
-                        if (!$(this).next('.invalid-feedback').length) {
-                            $(this).after('<div class="invalid-feedback">Please enter a valid ' + govIdType + ' number</div>');
-                        }
-                    } else {
-                        $(this).removeClass('is-invalid');
-                        $(this).next('.invalid-feedback').remove();
-                    }
+
+                govInput.next('.invalid-feedback').remove();
+
+                if (!govId || !govIdType) {
+                    govInput.removeClass('is-invalid');
+                    return;
                 }
-            });
+
+                var pattern = getGovernmentIdPattern(govIdType);
+                var isValid = pattern ? pattern.test(govId) : false;
+
+                if (!isValid) {
+                    govInput.addClass('is-invalid');
+                    govInput.after('<div class="invalid-feedback">Please enter a valid ' + govIdType + ' number</div>');
+                } else {
+                    govInput.removeClass('is-invalid');
+                }
+            }
+
+            // Government ID validation (mirrors backend patterns)
+            $('input[name="government_id"]').on('input', validateGovernmentIdField);
+            $('select[name="government_id_type"]').on('change', validateGovernmentIdField);
 
             // Auto-generate display name
             $('input[name="firstname"], input[name="lastname"]').on('input', function() {
@@ -1018,6 +1052,61 @@ $(document).ready(function() {
                 
                 if (firstname && lastname && !$('input[name="display_name"]').val()) {
                     $('input[name="display_name"]').val(firstname + ' ' + lastname);
+                }
+            });
+
+            // Password strength indicator (always available)
+            var passwordInput = $('input[name="password"]');
+            var strengthFill = $('.password-strength__fill');
+            var strengthText = $('.password-strength__text');
+            var registerForm = $('form[action="{{ route('user.register') }}"]');
+
+            function getPasswordStrength(password) {
+                var score = 0;
+                if (!password) return { score: 0, label: '@lang("Too weak")', color: '#ef4444' };
+
+                if (password.length >= 6) score++;
+                if (password.length >= 10) score++;
+                if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+                if (/\d/.test(password)) score++;
+                if (/[^A-Za-z0-9]/.test(password)) score++;
+
+                if (score <= 1) return { score: score, label: '@lang("Too weak")', color: '#ef4444' };
+                if (score <= 2) return { score: score, label: '@lang("Weak")', color: '#f97316' };
+                if (score <= 3) return { score: score, label: '@lang("Medium")', color: '#eab308' };
+                if (score <= 4) return { score: score, label: '@lang("Strong")', color: '#22c55e' };
+                return { score: score, label: '@lang("Very strong")', color: '#16a34a' };
+            }
+
+            function updatePasswordStrengthUI() {
+                var password = passwordInput.val() || '';
+                var result = getPasswordStrength(password);
+                var width = (result.score / 5) * 100;
+
+                strengthFill.css({ width: width + '%', backgroundColor: result.color });
+                strengthText.text('@lang("Strength"): ' + result.label);
+
+                if (password.length > 0 && password.length < 6) {
+                    passwordInput.addClass('is-invalid');
+                } else {
+                    passwordInput.removeClass('is-invalid');
+                }
+            }
+
+            passwordInput.on('input', updatePasswordStrengthUI);
+            updatePasswordStrengthUI();
+
+            registerForm.on('submit', function(e) {
+                var password = passwordInput.val() || '';
+                var passwordGroup = passwordInput.closest('.form-group');
+                if (password.length < 6) {
+                    e.preventDefault();
+                    passwordInput.addClass('is-invalid').focus();
+                    if (!passwordGroup.find('.password-invalid-feedback').length) {
+                        passwordInput.after('<div class="invalid-feedback password-invalid-feedback">Password must be at least 6 characters long</div>');
+                    }
+                } else {
+                    passwordGroup.find('.password-invalid-feedback').remove();
                 }
             });
 

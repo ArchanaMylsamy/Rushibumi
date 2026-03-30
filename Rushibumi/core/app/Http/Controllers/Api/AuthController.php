@@ -8,6 +8,7 @@ use App\Models\UserLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use App\Constants\Status;
 
 class AuthController extends Controller
@@ -21,6 +22,9 @@ class AuthController extends Controller
         if (!gs('registration')) {
             return responseError('registration_disabled', ['Registration is currently disabled']);
         }
+
+        $countryData  = json_decode(file_get_contents(resource_path('views/partials/country.json')), true) ?? [];
+        $countryNames = array_values(array_map(fn($countryInfo) => $countryInfo['country'], $countryData));
 
         $passwordValidation = \Illuminate\Validation\Rules\Password::min(6);
         if (gs('secure_password')) {
@@ -38,9 +42,9 @@ class AuthController extends Controller
             'display_name' => 'required|string|max:100|unique:users',
             
             // Contact information
-            'email' => 'required|string|email|max:40|unique:users',
-            'phone_number' => 'required|string|max:20|unique:users',
-            'country_name' => 'required|string|max:255',
+            'email' => 'required|string|email:rfc,dns|max:191|unique:users,email',
+            'phone_number' => ['required', 'string', 'max:20', 'unique:users', 'regex:/^\+?[1-9]\d{6,14}$/'],
+            'country_name' => ['required', 'string', 'max:255', Rule::in($countryNames)],
             'address' => 'required|string',
             
             // Government ID
@@ -49,24 +53,39 @@ class AuthController extends Controller
             
             // Password and agreement
             'password' => ['required', 'confirmed', $passwordValidation],
+            'captcha' => 'required',
             'agree' => $agree
         ], [
             // Custom error messages for password validation
             'password.mixed' => 'The password must contain both uppercase and lowercase letters.',
             'password.numbers' => 'The password must contain at least one number.',
             'password.symbols' => 'The password must contain at least one symbol.',
+            'captcha.required' => 'Captcha is required.',
+            'phone_number.regex' => 'Please enter a valid phone number.',
+            'country_name.in' => 'Please select a valid country.',
         ]);
 
         // Custom validation: At least one of firstname or lastname must be provided
         $validator->after(function ($validator) use ($request) {
-            if (empty($request->firstname) && empty($request->lastname)) {
+            $firstname = trim($request->firstname ?? '');
+            $lastname  = trim($request->lastname ?? '');
+
+            if ($firstname === '' && $lastname === '') {
                 $validator->errors()->add('firstname', 'Either first name or last name is required.');
                 $validator->errors()->add('lastname', 'Either first name or last name is required.');
+            }
+
+            if ($request->filled('government_id') && $request->filled('government_id_type') && !$this->isValidGovernmentId($request->government_id_type, $request->government_id)) {
+                $validator->errors()->add('government_id', 'Please enter a valid government ID number for the selected ID type.');
             }
         });
 
         if ($validator->fails()) {
             return responseError('validation_error', $validator->errors()->all());
+        }
+
+        if (!verifyCaptcha()) {
+            return responseError('invalid_captcha', ['Invalid captcha provided']);
         }
 
         // Create user
@@ -155,10 +174,15 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
+            'captcha' => 'required',
         ]);
 
         if ($validator->fails()) {
             return responseError('validation_error', $validator->errors()->all());
+        }
+
+        if (!verifyCaptcha()) {
+            return responseError('invalid_captcha', ['Invalid captcha provided']);
         }
 
         // Find username or email
@@ -255,6 +279,23 @@ class AuthController extends Controller
         $userLogin->browser = @$userAgent['browser'];
         $userLogin->os = @$userAgent['os_platform'];
         $userLogin->save();
+    }
+
+    private function isValidGovernmentId(string $governmentIdType, string $governmentId): bool
+    {
+        $governmentId = trim($governmentId);
+
+        return match ($governmentIdType) {
+            'Passport'       => preg_match('/^[A-Z0-9]{6,20}$/i', $governmentId) === 1,
+            'Driver License' => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'National ID'    => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'Aadhar Card'    => preg_match('/^\d{12}$/', $governmentId) === 1,
+            'SSN'            => preg_match('/^\d{3}-\d{2}-\d{4}$/', $governmentId) === 1,
+            'Voter ID'       => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'PAN Card'       => preg_match('/^[A-Z]{5}\d{4}[A-Z]$/', $governmentId) === 1,
+            'Other'          => mb_strlen($governmentId) >= 5 && mb_strlen($governmentId) <= 50,
+            default          => false,
+        };
     }
 }
 

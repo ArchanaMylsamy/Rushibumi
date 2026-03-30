@@ -161,14 +161,16 @@
                         </svg>
                     </button>
 
-                    <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-                            <circle cx="12" cy="13" r="3"></circle>
-                        </svg>
-                    </button>
+                    @if ($canUploadCommentMedia)
+                        <button type="button" class="media-upload-btn" title="Upload video or GIF" data-type="video">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                                <circle cx="12" cy="13" r="3"></circle>
+                            </svg>
+                        </button>
 
-                    <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                        <input type="file" name="comment_media" class="comment-media-input d-none" accept="video/*,image/gif">
+                    @endif
                     <div class="comment-media-preview d-none"></div>
 
                     <div class="emoji-picker-container" style="display: none;">
@@ -1160,6 +1162,44 @@
         .transcript-language-select:hover {
             border-color: hsl(var(--base)) !important;
         }
+
+        /* Mobile layout fixes for shorts page */
+        @media (max-width: 767px) {
+            .short-video-wrapper {
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .short-video-wrapper .plyr--video {
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .video-wrapper .video-player {
+                object-fit: cover;
+            }
+
+            .action-container {
+                right: 10px;
+                bottom: 110px;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .comment-box,
+            .transcript-box {
+                width: 100%;
+                right: 0;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+            }
+
+            .commnet-form {
+                width: 100% !important;
+            }
+        }
     </style>
 @endpush
 @push('style-lib')
@@ -1514,8 +1554,9 @@
                     const commentText = form.find('textarea[name="comment"]').val();
                     const csrfToken = $('meta[name="csrf-token"]').attr('content') || "{{ csrf_token() }}";
                     
-                    if (!commentText || commentText.trim() === '') {
-                        notify('error', 'Please enter a comment');
+                    const hasMedia = fileInput && fileInput.files && fileInput.files.length > 0;
+                    if ((!commentText || commentText.trim() === '') && !hasMedia) {
+                        notify('error', 'Please enter a comment or upload a GIF/video');
                         return;
                     }
                     
@@ -1661,8 +1702,9 @@
                     const replyTo = form.find('input[name="reply_to"]').val();
                     const csrfToken = $('meta[name="csrf-token"]').attr('content') || form.find('input[name="_token"]').val();
                     
-                    if (!commentText || commentText.trim() === '') {
-                        notify('error', 'Please enter a comment');
+                    const hasMedia = fileInput && fileInput.files && fileInput.files.length > 0;
+                    if ((!commentText || commentText.trim() === '') && !hasMedia) {
+                        notify('error', 'Please enter a comment or upload a GIF/video');
                         return;
                     }
                     

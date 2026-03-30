@@ -19,7 +19,6 @@
                                     <th>@lang('Image')</th>
                                     <th>@lang('Title')</th>
                                     <th>@lang('Type')</th>
-                                    <th>@lang('Position')</th>
                                     <th>@lang('Priority')</th>
                                     <th>@lang('Clicks')</th>
                                     <th>@lang('Impressions')</th>
@@ -47,13 +46,6 @@
                                                 <span class="badge badge--success">@lang('GIF')</span>
                                             @else
                                                 <span class="badge badge--warning">@lang('Video')</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($feedAd->position == 1)
-                                                <span class="badge badge--primary">@lang('Feed')</span>
-                                            @else
-                                                <span class="badge badge--warning">@lang('Top')</span>
                                             @endif
                                         </td>
                                         <td>{{ $feedAd->priority }}</td>

@@ -13,9 +13,21 @@ use Illuminate\Support\Facades\Validator;
 
 class CommentController extends Controller {
 
+    private function canUploadCommentMedia(Video $video): bool {
+        if (!auth()->check()) {
+            return false;
+        }
+
+        if ($video->user_id == auth()->id()) {
+            return true;
+        }
+
+        return $video->user->subscribers()->where('following_id', auth()->id())->exists();
+    }
+
     public function commentSubmit(Request $request, $id) {
         $validator = Validator::make($request->all(), [
-            'comment' => 'required|string',
+            'comment' => 'nullable|string',
             'comment_media' => 'nullable|file|mimes:mp4,avi,mov,wmv,flv,webm,gif|max:10240', // 10MB max
         ]);
 
@@ -38,10 +50,25 @@ class CommentController extends Controller {
             ]);
         }
 
+        $commentText = trim((string) $request->input('comment', ''));
+        if ($commentText === '' && !$request->hasFile('comment_media')) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => ['error' => 'Please enter a comment or upload a GIF/video.'],
+            ]);
+        }
+
+        if ($request->hasFile('comment_media') && !$this->canUploadCommentMedia($video)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => ['error' => 'Only subscribers can upload GIFs or videos in comments.'],
+            ]);
+        }
+
         $comment           = new Comment();
         $comment->user_id  = auth()->id();
         $comment->video_id = $video->id;
-        $comment->comment  = $request->comment;
+        $comment->comment  = $commentText;
 
         // Handle media upload
         if ($request->hasFile('comment_media')) {
@@ -168,7 +195,7 @@ class CommentController extends Controller {
     public function replySubmit(Request $request) {
 
         $validator = Validator::make($request->all(), [
-            'comment'  => 'required',
+            'comment'  => 'nullable|string',
             'reply_to' => 'required|exists:comments,id',
             'comment_media' => 'nullable|file|mimes:mp4,avi,mov,wmv,flv,webm,gif|max:10240', // 10MB max
         ]);
@@ -190,12 +217,38 @@ class CommentController extends Controller {
             ]);
         }
 
+        $video = Video::published()->public()->whereHas('user', function ($query) {
+            $query->active();
+        })->find($parentComment->video_id);
+
+        if (!$video) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => ['error' => 'Video not found'],
+            ]);
+        }
+
+        $commentText = trim((string) $request->input('comment', ''));
+        if ($commentText === '' && !$request->hasFile('comment_media')) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => ['error' => 'Please enter a comment or upload a GIF/video.'],
+            ]);
+        }
+
+        if ($request->hasFile('comment_media') && !$this->canUploadCommentMedia($video)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => ['error' => 'Only subscribers can upload GIFs or videos in comments.'],
+            ]);
+        }
+
         $comment                  = new Comment();
         $comment->user_id         = auth()->id();
         $comment->replier_user_id = $parentComment->user_id;
         $comment->video_id        = $parentComment->video_id;
         $comment->parent_id       = $parentComment->parent_id == 0 ? $parentComment->id : $parentComment->parent_id;
-        $comment->comment         = $request->comment;
+        $comment->comment         = $commentText;
 
         // Handle media upload
         if ($request->hasFile('comment_media')) {

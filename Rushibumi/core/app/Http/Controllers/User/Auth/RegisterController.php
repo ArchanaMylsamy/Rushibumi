@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterController extends Controller
@@ -35,7 +36,8 @@ class RegisterController extends Controller
 
     protected function validator(array $data)
     {
-
+        $countryData  = json_decode(file_get_contents(resource_path('views/partials/country.json')), true) ?? [];
+        $countryNames = array_values(array_map(fn($countryInfo) => $countryInfo['country'], $countryData));
         $passwordValidation = Password::min(6);
 
         if (gs('secure_password')) {
@@ -54,9 +56,9 @@ class RegisterController extends Controller
             'display_name' => 'required|string|max:100|unique:users',
             
             // Contact information
-            'email' => 'required|string|email|max:40|unique:users',
-            'phone_number' => 'required|string|max:20|unique:users',
-            'country_name' => 'required|string|max:255',
+            'email' => 'required|string|email:rfc,dns|max:191|unique:users,email',
+            'phone_number' => ['required', 'string', 'max:20', 'unique:users', 'regex:/^\+?[1-9]\d{6,14}$/'],
+            'country_name' => ['required', 'string', 'max:255', Rule::in($countryNames)],
             'address' => 'required|string',
             
             // Government ID
@@ -72,7 +74,9 @@ class RegisterController extends Controller
             'display_name.unique' => 'This display name is already taken',
             'phone_number.required' => 'The phone number field is required',
             'phone_number.unique' => 'This phone number is already registered',
+            'phone_number.regex' => 'Please enter a valid phone number',
             'country_name.required' => 'The country field is required',
+            'country_name.in' => 'Please select a valid country',
             'address.required' => 'The address field is required',
             'government_id.required' => 'The government ID field is required',
             'government_id.unique' => 'This government ID is already registered',
@@ -82,13 +86,37 @@ class RegisterController extends Controller
 
         // Custom validation: At least one of firstname or lastname must be provided
         $validate->after(function ($validator) use ($data) {
-            if (empty($data['firstname']) && empty($data['lastname'])) {
+            $firstname = trim($data['firstname'] ?? '');
+            $lastname  = trim($data['lastname'] ?? '');
+
+            if ($firstname === '' && $lastname === '') {
                 $validator->errors()->add('firstname', 'Either first name or last name is required.');
                 $validator->errors()->add('lastname', 'Either first name or last name is required.');
+            }
+
+            if (!empty($data['government_id']) && !empty($data['government_id_type']) && !$this->isValidGovernmentId($data['government_id_type'], $data['government_id'])) {
+                $validator->errors()->add('government_id', 'Please enter a valid government ID number for the selected ID type.');
             }
         });
 
         return $validate;
+    }
+
+    protected function isValidGovernmentId(string $governmentIdType, string $governmentId): bool
+    {
+        $governmentId = trim($governmentId);
+
+        return match ($governmentIdType) {
+            'Passport'       => preg_match('/^[A-Z0-9]{6,20}$/i', $governmentId) === 1,
+            'Driver License' => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'National ID'    => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'Aadhar Card'    => preg_match('/^\d{12}$/', $governmentId) === 1,
+            'SSN'            => preg_match('/^\d{3}-\d{2}-\d{4}$/', $governmentId) === 1,
+            'Voter ID'       => preg_match('/^[A-Z0-9-]{5,30}$/i', $governmentId) === 1,
+            'PAN Card'       => preg_match('/^[A-Z]{5}\d{4}[A-Z]$/', $governmentId) === 1,
+            'Other'          => mb_strlen($governmentId) >= 5 && mb_strlen($governmentId) <= 50,
+            default          => false,
+        };
     }
 
     public function register(Request $request)
