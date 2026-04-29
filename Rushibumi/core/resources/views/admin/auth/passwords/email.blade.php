@@ -10,13 +10,12 @@
                                 <h3 class="title text-white">@lang('Recover Account')</h3>
                             </div>
                             <div class="login-wrapper__body">
-                                <form action="{{ route('admin.password.reset') }}" method="POST" class="login-form verify-gcaptcha">
+                                <form action="{{ route('admin.password.reset') }}" method="POST" class="login-form">
                                     @csrf
                                     <div class="form-group">
                                         <label>@lang('Email')</label>
                                         <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
                                     </div>
-                                    <x-captcha />
                                     <button type="submit" class="btn cmn-btn w-100">@lang('Submit')</button>
                                     <div class="text-center mt-3">
                                         <a href="{{ route('admin.login') }}" class="text-white"><i class="las la-sign-in-alt" aria-hidden="true"></i>@lang('Back to Login')</a>

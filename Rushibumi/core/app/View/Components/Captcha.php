@@ -29,10 +29,7 @@ class Captcha extends Component
      */
     public function render()
     {
-        if ($this->path) {
-            return view($this->path.'.captcha');
-        }
-        $level =$this->hasLevel;
-        return view('partials.captcha',compact('level'));
+        // Temporarily disable captcha rendering across all forms.
+        return '';
     }
 }

@@ -53,14 +53,12 @@ class AuthController extends Controller
             
             // Password and agreement
             'password' => ['required', 'confirmed', $passwordValidation],
-            'captcha' => 'required',
             'agree' => $agree
         ], [
             // Custom error messages for password validation
             'password.mixed' => 'The password must contain both uppercase and lowercase letters.',
             'password.numbers' => 'The password must contain at least one number.',
             'password.symbols' => 'The password must contain at least one symbol.',
-            'captcha.required' => 'Captcha is required.',
             'phone_number.regex' => 'Please enter a valid phone number.',
             'country_name.in' => 'Please select a valid country.',
         ]);
@@ -82,10 +80,6 @@ class AuthController extends Controller
 
         if ($validator->fails()) {
             return responseError('validation_error', $validator->errors()->all());
-        }
-
-        if (!verifyCaptcha()) {
-            return responseError('invalid_captcha', ['Invalid captcha provided']);
         }
 
         // Create user
@@ -174,15 +168,10 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
-            'captcha' => 'required',
         ]);
 
         if ($validator->fails()) {
             return responseError('validation_error', $validator->errors()->all());
-        }
-
-        if (!verifyCaptcha()) {
-            return responseError('invalid_captcha', ['Invalid captcha provided']);
         }
 
         // Find username or email

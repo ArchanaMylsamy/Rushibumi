@@ -14,7 +14,7 @@
                             </div>
                             <div class="login-wrapper__body">
                                 <form action="{{ route('admin.login') }}" method="POST"
-                                    class="cmn-form mt-30 verify-gcaptcha login-form">
+                                    class="cmn-form mt-30 login-form">
                                     @csrf
                                     <div class="form-group">
                                         <label>@lang('Username')</label>
@@ -29,7 +29,6 @@
                                         </div>
                                         <input type="password" class="form-control" name="password" autocomplete="current-password" required>
                                     </div>
-                                    <x-captcha />
                                     <button type="submit" class="btn cmn-btn w-100">@lang('LOGIN')</button>
                                 </form>
                             </div>

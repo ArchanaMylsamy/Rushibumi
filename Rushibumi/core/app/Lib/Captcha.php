@@ -60,12 +60,8 @@ class Captcha{
     * @return boolean
     */
     public static function verify(){
-        $gCaptchaPass = self::verifyGoogleCaptcha();
-        $cCaptchaPass = self::verifyCustomCaptcha();
-        if ($gCaptchaPass && $cCaptchaPass) {
-            return true;
-        }
-        return false;
+        // Temporarily bypass captcha validation.
+        return true;
     }
 
     /**

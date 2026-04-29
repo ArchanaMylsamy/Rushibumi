@@ -24,11 +24,6 @@ class ForgotPasswordController extends Controller
             'email' => 'required|email',
         ]);
 
-        if(!verifyCaptcha()){
-            $notify[] = ['error','Invalid captcha provided'];
-            return back()->withNotify($notify);
-        }
-
         $admin = Admin::where('email', $request->email)->first();
         if (!$admin) {
             $notify[] = ['error','No admin account found with this email'];

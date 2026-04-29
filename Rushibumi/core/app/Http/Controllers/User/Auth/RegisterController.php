@@ -67,7 +67,6 @@ class RegisterController extends Controller
             
             // Password and agreement
             'password' => ['required', 'confirmed', $passwordValidation],
-            'captcha' => 'sometimes|required',
             'agree' => $agree
         ], [
             'display_name.required' => 'The display name field is required',
@@ -128,11 +127,6 @@ class RegisterController extends Controller
         $this->validator($request->all())->validate();
 
         $request->session()->regenerateToken();
-
-        if (!verifyCaptcha()) {
-            $notify[] = ['error', 'Invalid captcha provided'];
-            return back()->withNotify($notify);
-        }
 
         event(new Registered($user = $this->create($request->all())));
 
